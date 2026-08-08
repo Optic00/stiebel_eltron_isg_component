@@ -260,6 +260,7 @@ async def test_configured_name_wins_over_the_replacement_entity(
     assert issue is not None
     assert issue.is_fixable is True
     assert issue.is_persistent is True
+    assert issue.issue_domain == DOMAIN
     assert issue.severity is ir.IssueSeverity.WARNING
     assert issue.data == {
         "entry_id": config_entry_with_name.entry_id,
