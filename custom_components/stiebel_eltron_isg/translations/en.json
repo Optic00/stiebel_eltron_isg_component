@@ -45,6 +45,18 @@
         }
     },
     "exceptions": {
+        "modbus_setup_failed": {
+            "message": "Could not set up the Modbus connection: {error}"
+        },
+        "controller_read_failed": {
+            "message": "Could not read the controller model: {error}"
+        },
+        "unsupported_controller": {
+            "message": "Unsupported controller model: {model_id}"
+        },
+        "initial_read_failed": {
+            "message": "Could not read the initial device data: {error}"
+        },
         "write_unsupported": {
             "message": "The setting {field} cannot be written on the connected controller."
         },
