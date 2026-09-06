@@ -91,6 +91,21 @@ twice.
 The separate **Total** sensors remain cumulative alternatives. Which energy
 entities are available depends on the connected controller.
 
+## Automation example
+
+Use the [heat pump fault notification blueprint](blueprints/automation/heat_pump_fault.yaml)
+to receive a notification when the ISG **Error Status** binary sensor changes
+to **On**. In Home Assistant, go to **Settings → Automations & scenes → Blueprints**,
+choose **Import blueprint**, and paste the GitHub URL of the linked YAML file.
+Create an automation from it and select your heat pump's Error Status entity.
+
+The default action creates a persistent notification in Home Assistant. You can
+replace it with your preferred notification action, such as a phone notification.
+It does not change heat pump settings or periodically repeat alerts. An existing
+fault is reported only when the entity next changes to On; unknown and unavailable
+states do not trigger an alert. This is a convenience notification, not a substitute
+for the heat pump's own fault display.
+
 ## Removing the integration
 
 1. Open **Settings → Devices & services**.
