@@ -17,6 +17,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from modbus_connection import ModbusError
 from modbus_connection.cli_helper import field_rows
+from modbus_connection.model import Component, ManualComponent
 from pystiebeleltron import ControllerModel, StiebelEltronModbusError
 
 from custom_components.stiebel_eltron_isg.const import (
@@ -139,6 +140,9 @@ class StiebelEltronDataCoordinator[T: StiebelEltronApi](
         """Return the raw data from the heat pump."""
         result: dict[str, Any] = {}
         for component in vars(self._api).values():
+            # APIs also contain polling helpers, which have no register fields.
+            if not isinstance(component, (Component, ManualComponent)):
+                continue
             component_result = dict(field_rows(component))
             result = {**result, **component_result}
         return result
