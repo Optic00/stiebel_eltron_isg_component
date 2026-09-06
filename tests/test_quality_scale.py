@@ -22,7 +22,12 @@ DOCUMENTATION_REFERENCE = re.compile(
 )
 MARKDOWN_HEADING = re.compile(r"^#{1,6}\s+(?P<title>.+?)\s*#*$")
 
-# Keep this fixed inventory in sync with the pinned source named in the YAML header.
+# Independently verified on 2026-09-06: AST extraction of ALL_RULES from
+# https://github.com/home-assistant/core/blob/fc034572d0216a04ed40a07154394908a594dfed/script/hassfest/quality_scale.py
+# (Home Assistant 2026.9.1) matched all 54 names below and in the YAML.
+# This offline test checks local consistency, not upstream provenance. When
+# changing either inventory or its pin, repeat the independent source comparison;
+# do not merely edit both local inventories until they agree.
 PINNED_RULES = frozenset({
     "action-exceptions",
     "action-setup",
@@ -139,8 +144,12 @@ def test_quality_scale_file_exists() -> None:
 def test_quality_scale_tracks_pinned_rule_inventory(
     quality_rules: dict[str, Any],
 ) -> None:
-    """Track every pinned Home Assistant 2026.9.1 rule."""
-    assert set(quality_rules) == PINNED_RULES
+    """Keep the YAML consistent with the independently verified inventory."""
+    assert set(quality_rules) == PINNED_RULES, (
+        "Quality rules differ from the verified inventory. Before updating either "
+        "local list or the pin, independently extract ALL_RULES from the pinned "
+        "Home Assistant source named above and compare both inventories against it."
+    )
 
 
 def test_quality_scale_defines_each_rule_once(raw_quality_scale: str) -> None:
