@@ -40,6 +40,18 @@
         }
     },
     "exceptions": {
+        "modbus_setup_failed": {
+            "message": "Nepodařilo se nastavit připojení Modbus: {error}"
+        },
+        "controller_read_failed": {
+            "message": "Nepodařilo se přečíst model regulátoru: {error}"
+        },
+        "unsupported_controller": {
+            "message": "Nepodporovaný model regulátoru: {model_id}"
+        },
+        "initial_read_failed": {
+            "message": "Nepodařilo se přečíst počáteční data zařízení: {error}"
+        },
         "write_unsupported": {
             "message": "The setting {field} cannot be written on the connected controller."
         },

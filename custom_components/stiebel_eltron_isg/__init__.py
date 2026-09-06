@@ -99,12 +99,20 @@ async def async_setup_entry(
             UNIT_ID,
         )
     except HomeAssistantError as exception:
-        raise ConfigEntryError(str(exception)) from exception
+        raise ConfigEntryError(
+            translation_domain=DOMAIN,
+            translation_key="modbus_setup_failed",
+            translation_placeholders={"error": str(exception)},
+        ) from exception
 
     try:
         model = await get_controller_model(unit)
     except StiebelEltronModbusError as exception:
-        raise ConfigEntryNotReady("Could not read controller model") from exception
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="controller_read_failed",
+            translation_placeholders={"error": str(exception)},
+        ) from exception
     except UnknownControllerModelError as exception:
         # An unrecognised controller id is a permanent condition, not a
         # transient modbus glitch: fail cleanly instead of retrying forever.
@@ -112,7 +120,9 @@ async def async_setup_entry(
         # entry anyway.
         _create_unsupported_controller_issue(hass, entry, exception.model_id)
         raise ConfigEntryError(
-            f"Unsupported controller model: {exception}"
+            translation_domain=DOMAIN,
+            translation_key="unsupported_controller",
+            translation_placeholders={"model_id": str(exception.model_id)},
         ) from exception
 
     coordinator: AnyStiebelEltronDataCoordinator
@@ -144,7 +154,11 @@ async def async_setup_entry(
         _create_unsupported_controller_issue(
             hass, entry, getattr(model, "value", model)
         )
-        raise ConfigEntryError(f"Unsupported controller model: {model}")
+        raise ConfigEntryError(
+            translation_domain=DOMAIN,
+            translation_key="unsupported_controller",
+            translation_placeholders={"model_id": str(getattr(model, "value", model))},
+        )
 
     # A library and integration update can add the model while this repair still
     # exists from an earlier setup attempt.
@@ -163,7 +177,16 @@ async def async_setup_entry(
 
     entry.runtime_data = coordinator
 
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryNotReady as exception:
+        # The coordinator wraps its first update failure without translation
+        # metadata. Keep the cause chain and expose a translated setup reason.
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="initial_read_failed",
+            translation_placeholders={"error": str(exception)},
+        ) from exception
 
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
 
