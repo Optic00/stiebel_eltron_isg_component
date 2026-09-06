@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from modbus_connection import ModbusError
+from modbus_connection.model import Component, ManualComponent
 import pystiebeleltron
 from pystiebeleltron import ControllerModel, StiebelEltronModbusError
 import pytest
@@ -184,9 +185,11 @@ def test_model_name_is_readable(model, expected: str) -> None:
 
 def test_get_raw_data_combines_all_api_components() -> None:
     """Diagnostics receive the rows of every API component."""
-    first = object()
-    second = object()
-    coordinator = _coordinator(SimpleNamespace(first=first, second=second))
+    first = Component.__new__(Component)
+    second = ManualComponent.__new__(ManualComponent)
+    coordinator = _coordinator(
+        SimpleNamespace(first=first, second=second, _group=object())
+    )
 
     with patch.object(
         coordinator_module,
@@ -202,6 +205,7 @@ def test_get_raw_data_combines_all_api_components() -> None:
             "shared": 2,
         }
 
+    assert rows.call_count == 2
     assert rows.call_args_list[0].args == (first,)
     assert rows.call_args_list[1].args == (second,)
 
