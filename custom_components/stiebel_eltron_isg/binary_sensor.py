@@ -156,6 +156,7 @@ WPM_3I_BINARY_SENSOR_TYPES = [
     StiebelEltronBinarySensorEntityDescription(
         translation_key=ERROR_STATUS,
         key=ERROR_STATUS,
+        device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
         modbus_register=lambda api: api.system_state.fault_status,
         bit_number=0,
@@ -465,6 +466,7 @@ LWZ_BINARY_SENSOR_TYPES = [
     StiebelEltronBinarySensorEntityDescription(
         translation_key=ERROR_STATUS,
         key=ERROR_STATUS,
+        device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
         modbus_register=lambda api: api.system_state.fault_status,
     ),

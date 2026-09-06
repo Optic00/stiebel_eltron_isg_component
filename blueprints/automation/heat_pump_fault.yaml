@@ -15,6 +15,7 @@ blueprint:
           filter:
             - integration: stiebel_eltron_isg
               domain: binary_sensor
+              device_class: problem
     notification_action:
       name: Notification action
       description: Action to run when the heat pump reports a fault.
