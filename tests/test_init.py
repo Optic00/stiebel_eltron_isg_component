@@ -318,6 +318,10 @@ async def test_async_setup_entry_rejects_unhandled_model(
     )
     assert issue is not None
     assert issue.translation_placeholders == {"model_id": "166"}
+    assert mock_config_entry.error_reason_translation_key == "unsupported_controller"
+    assert mock_config_entry.error_reason_translation_placeholders == {
+        "model_id": "166"
+    }
     assert mock_modbus_connection.connected is False
 
 
