@@ -12,7 +12,7 @@
 # tests check local consistency; they do not fetch or verify the upstream source.
 # Repeat the source comparison when changing either inventory or the pin.
 # Rule guidance: https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/
-# Reassessed against integration main fa48531, including PRs #637 and #683.
+# Reassessed against integration main ca40b32, including merged setup translations (#685).
 rules:
   # Bronze
   action-setup:
@@ -113,8 +113,8 @@ rules:
     status: done
     comment: coordinator.py supplies DeviceInfo with a stable config-entry identifier, model, model ID and local configuration URL; platform entities share that device.
   diagnostics:
-    status: done
-    comment: diagnostics.py returns config-entry diagnostics and redacts the host; tests/test_diagnostics.py verifies redaction and optional-field handling.
+    status: todo
+    comment: "The current main export passes an internal ControllerComponents helper to field_rows and raises AttributeError with pystiebeleltron 0.7.0. PR #686 fixes this with real WPM, WPM3i and LWZ diagnostics tests; reassess after merge."
   discovery-update-info:
     status: done
     comment: config_flow.py updates the host when DHCP rediscovers a known MAC; tests/test_config_flow.py checks the existing entry is retained.
@@ -126,7 +126,7 @@ rules:
     comment: See README.md#troubleshooting for the 30-second polling interval and unavailable behavior.
   docs-examples:
     status: todo
-    comment: README.md#energy-and-long-term-statistics explains sensor selection but no reusable automation blueprint is linked, as required by the current docs-examples guidance.
+    comment: "README.md#energy-and-long-term-statistics explains sensor selection but no reusable automation blueprint is linked on main. PR #689 adds a fault-notification blueprint and import instructions; reassess after merge against the docs-examples guidance."
   docs-known-limitations:
     status: done
     comment: See README.md#troubleshooting and README.md#energy-and-long-term-statistics for register availability, firmware and statistics limitations.
@@ -158,8 +158,8 @@ rules:
     status: done
     comment: Description translation keys resolve through strings.json and translations/*.json; tests/test_translations.py rejects missing or orphaned entity names.
   exception-translations:
-    status: todo
-    comment: Platform write failures use translated errors in coordinator.py, but __init__.py still raises plain-text ConfigEntryError and ConfigEntryNotReady for link conflicts, unknown controllers and model-read failures.
+    status: done
+    comment: "PR #685 translates Modbus setup, controller detection, unsupported models and initial refresh failures in __init__.py while preserving causes and retry behavior. tests/test_setup_translations.py checks actual HA translation lookup and setup metadata; platform write failures remain translated in coordinator.py."
   icon-translations:
     status: done
     comment: icons.json supplies translated entity icons, states and ranges; tests/test_translations.py checks keys and device-class consistency.
