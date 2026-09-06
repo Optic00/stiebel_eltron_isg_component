@@ -12,7 +12,7 @@
 # tests check local consistency; they do not fetch or verify the upstream source.
 # Repeat the source comparison when changing either inventory or the pin.
 # Rule guidance: https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/
-# Reassessed against integration main ca40b32, including merged setup translations (#685).
+# Reassessed against integration main b10045f, including merged PRs #685-687 and #689.
 rules:
   # Bronze
   action-setup:
@@ -113,8 +113,8 @@ rules:
     status: done
     comment: coordinator.py supplies DeviceInfo with a stable config-entry identifier, model, model ID and local configuration URL; platform entities share that device.
   diagnostics:
-    status: todo
-    comment: "The current main export passes an internal ControllerComponents helper to field_rows and raises AttributeError with pystiebeleltron 0.7.0. PR #686 fixes this with real WPM, WPM3i and LWZ diagnostics tests; reassess after merge."
+    status: done
+    comment: "PR #686 restricts get_raw_data to register components. tests/test_diagnostics.py exercises both diagnostics endpoints with real WPM, WPM3i and LWZ APIs, verifies decoded values and host redaction, and serializes the result as JSON."
   discovery-update-info:
     status: done
     comment: config_flow.py updates the host when DHCP rediscovers a known MAC; tests/test_config_flow.py checks the existing entry is retained.
@@ -125,8 +125,8 @@ rules:
     status: done
     comment: See README.md#troubleshooting for the 30-second polling interval and unavailable behavior.
   docs-examples:
-    status: todo
-    comment: "README.md#energy-and-long-term-statistics explains sensor selection but no reusable automation blueprint is linked on main. PR #689 adds a fault-notification blueprint and import instructions; reassess after merge against the docs-examples guidance."
+    status: done
+    comment: "README.md#automation-example links the importable fault-notification blueprint and explains setup and limitations. tests/test_blueprint.py runs default and custom notification actions and checks entity selection for every supported model. For this custom integration, the blueprint is hosted in the integration repository rather than the Core documentation repository or forum."
   docs-known-limitations:
     status: done
     comment: See README.md#troubleshooting and README.md#energy-and-long-term-statistics for register availability, firmware and statistics limitations.
