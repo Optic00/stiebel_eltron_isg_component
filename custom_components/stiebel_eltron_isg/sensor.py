@@ -157,6 +157,13 @@ from .const import (
     VOLUME_STREAM,
     VOLUME_STREAM_WP1,
     VOLUME_STREAM_WP2,
+    WPMG_BRINE_INLET_TEMPERATURE,
+    WPMG_BRINE_OUTLET_TEMPERATURE,
+    WPMG_CONDENSER_INLET_TEMPERATURE,
+    WPMG_CONDENSER_OUTLET_TEMPERATURE,
+    WPMG_DHW_TEMPERATURE_WEIGHTED,
+    WPMG_OUTSIDE_TEMPERATURE_AVERAGED,
+    ExperimentalControllerModel,
 )
 from .coordinator import AnyStiebelEltronDataCoordinator, StiebelEltronConfigEntry
 from .entity import StiebelEltronISGEntity
@@ -1303,6 +1310,33 @@ LWZ_SENSOR_TYPES = (
     + LWZ_VENTILATION_SENSOR_TYPES
 )
 
+WPMG_SENSOR_TYPES = [
+    create_temperature_entity_description(
+        WPMG_OUTSIDE_TEMPERATURE_AVERAGED,
+        lambda api: api.system_values.outside_temperature_averaged,
+    ),
+    create_temperature_entity_description(
+        WPMG_DHW_TEMPERATURE_WEIGHTED,
+        lambda api: api.system_values.dhw_temperature_weighted,
+    ),
+    create_temperature_entity_description(
+        WPMG_BRINE_INLET_TEMPERATURE,
+        lambda api: api.system_values.brine_inlet_temperature,
+    ),
+    create_temperature_entity_description(
+        WPMG_BRINE_OUTLET_TEMPERATURE,
+        lambda api: api.system_values.brine_outlet_temperature,
+    ),
+    create_temperature_entity_description(
+        WPMG_CONDENSER_INLET_TEMPERATURE,
+        lambda api: api.system_values.condenser_inlet_temperature,
+    ),
+    create_temperature_entity_description(
+        WPMG_CONDENSER_OUTLET_TEMPERATURE,
+        lambda api: api.system_values.condenser_outlet_temperature,
+    ),
+]
+
 
 async def async_setup_entry(
     _hass: HomeAssistant,  # Unused function argument: `hass`
@@ -1312,7 +1346,12 @@ async def async_setup_entry(
     """Set up the sensor platform."""
     coordinator = entry.runtime_data
 
-    if coordinator.model == ControllerModel.WPM_3i:
+    if coordinator.model is ExperimentalControllerModel.WPM_G:
+        entities = [
+            StiebelEltronISGSensor(coordinator, entry, description)
+            for description in WPMG_SENSOR_TYPES
+        ]
+    elif coordinator.model == ControllerModel.WPM_3i:
         entities = [
             StiebelEltronISGSensor(
                 coordinator,

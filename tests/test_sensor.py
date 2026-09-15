@@ -80,6 +80,7 @@ from custom_components.stiebel_eltron_isg.const import (
     PRODUCED_WATER_HEATING_TOTAL,
     SOLAR_RUNTIME,
     TARGET_TEMPERATURE_HK1,
+    ExperimentalControllerModel,
 )
 from custom_components.stiebel_eltron_isg.entity import build_unique_id
 from custom_components.stiebel_eltron_isg.sensor import (
@@ -90,6 +91,7 @@ from custom_components.stiebel_eltron_isg.sensor import (
     WPM_AMOUNT_OF_HEAT_SENSOR_TYPES,
     WPM_INVERTER_POWER_SENSOR_TYPES,
     WPM_SENSOR_TYPES,
+    WPMG_SENSOR_TYPES,
     WPMSYSTEM_COOLING_SENSOR_TYPES,
     WPMSYSTEM_SENSOR_TYPES,
     StiebelEltronISGSensor,
@@ -242,7 +244,9 @@ def test_sensor_description_rejects_non_callable_register() -> None:
         )
 
 
-async def _setup_sensor_keys(model: ControllerModel) -> list[str]:
+async def _setup_sensor_keys(
+    model: ControllerModel | ExperimentalControllerModel,
+) -> list[str]:
     entry = SimpleNamespace(runtime_data=SimpleNamespace(model=model))
     add_entities = MagicMock()
     with patch.object(
@@ -255,6 +259,13 @@ async def _setup_sensor_keys(model: ControllerModel) -> list[str]:
     ):
         await sensor_module.async_setup_entry(None, entry, add_entities)
     return [key for _, key in add_entities.call_args.args[0]]
+
+
+async def test_setup_uses_only_wpmg_sensor_list() -> None:
+    """The experimental controller never receives writable platform entities."""
+    entity_keys = await _setup_sensor_keys(ExperimentalControllerModel.WPM_G)
+
+    assert entity_keys == [description.key for description in WPMG_SENSOR_TYPES]
 
 
 async def test_setup_uses_wpm_3i_sensor_lists() -> None:

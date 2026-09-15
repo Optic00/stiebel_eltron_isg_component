@@ -24,7 +24,13 @@ from pystiebeleltron import (
     get_controller_model,
 )
 
-from .const import DEFAULT_PORT, DOMAIN, UNIT_ID
+from .const import (
+    CONF_CONTROLLER_TYPE,
+    CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    DEFAULT_PORT,
+    DOMAIN,
+    UNIT_ID,
+)
 from .coordinator import AnyStiebelEltronDataCoordinator, StiebelEltronConfigEntry
 from .lwz_coordinator import StiebelEltronModbusLWZDataCoordinator
 from .migration import (
@@ -36,6 +42,7 @@ from .migration import (
 )
 from .wpm3i_coordinator import StiebelEltronModbusWPM3iDataCoordinator
 from .wpm_coordinator import StiebelEltronModbusWPMDataCoordinator
+from .wpmg import StiebelEltronModbusWpmGDataCoordinator
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
@@ -52,6 +59,13 @@ _PLATFORMS: list[Platform] = [
 ]
 
 _ISSUE_TRACKER = "https://github.com/pail23/stiebel_eltron_isg_component/issues"
+
+
+def _platforms_for_entry(entry: StiebelEltronConfigEntry) -> list[Platform]:
+    """Return only platforms supported by the configured controller mode."""
+    if entry.data.get(CONF_CONTROLLER_TYPE) == CONTROLLER_TYPE_WPM_G_EXPERIMENTAL:
+        return [Platform.SENSOR]
+    return _PLATFORMS
 
 
 def _unsupported_controller_issue_id(entry: StiebelEltronConfigEntry) -> str:
@@ -90,6 +104,9 @@ async def async_setup_entry(
 
     host = entry.data[CONF_HOST]
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+    experimental_wpmg = (
+        entry.data.get(CONF_CONTROLLER_TYPE) == CONTROLLER_TYPE_WPM_G_EXPERIMENTAL
+    )
 
     try:
         unit = async_get_unit(
@@ -105,75 +122,77 @@ async def async_setup_entry(
             translation_placeholders={"error": str(exception)},
         ) from exception
 
-    try:
-        model = await get_controller_model(unit)
-    except StiebelEltronModbusError as exception:
-        raise ConfigEntryNotReady(
-            translation_domain=DOMAIN,
-            translation_key="controller_read_failed",
-            translation_placeholders={"error": str(exception)},
-        ) from exception
-    except UnknownControllerModelError as exception:
-        # An unrecognised controller id is a permanent condition, not a
-        # transient modbus glitch: fail cleanly instead of retrying forever.
-        # Adding support requires a pystiebeleltron update, which reloads the
-        # entry anyway.
-        _create_unsupported_controller_issue(hass, entry, exception.model_id)
-        raise ConfigEntryError(
-            translation_domain=DOMAIN,
-            translation_key="unsupported_controller",
-            translation_placeholders={"model_id": str(exception.model_id)},
-        ) from exception
-
     coordinator: AnyStiebelEltronDataCoordinator
 
-    if model == ControllerModel.WPM_3i:
-        coordinator = StiebelEltronModbusWPM3iDataCoordinator(
-            hass, entry, model, unit, host
-        )
-    elif model in (
-        ControllerModel.WPMsystem,
-        ControllerModel.WPM_3,
-        ControllerModel.LWZ_R290,
-    ):
-        coordinator = StiebelEltronModbusWPMDataCoordinator(
-            hass, entry, model, unit, host
-        )
-    elif model in (
-        ControllerModel.LWZ,
-        ControllerModel.LWZ_x04_SOL,
-    ):
-        coordinator = StiebelEltronModbusLWZDataCoordinator(
-            hass,
-            entry,
-            model,
-            unit,
-            host,
-        )
+    if experimental_wpmg:
+        coordinator = StiebelEltronModbusWpmGDataCoordinator(hass, entry, unit, host)
     else:
-        _create_unsupported_controller_issue(
-            hass, entry, getattr(model, "value", model)
-        )
-        raise ConfigEntryError(
-            translation_domain=DOMAIN,
-            translation_key="unsupported_controller",
-            translation_placeholders={"model_id": str(getattr(model, "value", model))},
-        )
+        try:
+            detected_model = await get_controller_model(unit)
+        except StiebelEltronModbusError as exception:
+            raise ConfigEntryNotReady(
+                translation_domain=DOMAIN,
+                translation_key="controller_read_failed",
+                translation_placeholders={"error": str(exception)},
+            ) from exception
+        except UnknownControllerModelError as exception:
+            # An unrecognised controller id is a permanent condition, not a
+            # transient modbus glitch: fail cleanly instead of retrying forever.
+            # Adding support requires a pystiebeleltron update, which reloads the
+            # entry anyway.
+            _create_unsupported_controller_issue(hass, entry, exception.model_id)
+            raise ConfigEntryError(
+                translation_domain=DOMAIN,
+                translation_key="unsupported_controller",
+                translation_placeholders={"model_id": str(exception.model_id)},
+            ) from exception
+
+        if detected_model == ControllerModel.WPM_3i:
+            coordinator = StiebelEltronModbusWPM3iDataCoordinator(
+                hass, entry, detected_model, unit, host
+            )
+        elif detected_model in (
+            ControllerModel.WPMsystem,
+            ControllerModel.WPM_3,
+            ControllerModel.LWZ_R290,
+        ):
+            coordinator = StiebelEltronModbusWPMDataCoordinator(
+                hass, entry, detected_model, unit, host
+            )
+        elif detected_model in (
+            ControllerModel.LWZ,
+            ControllerModel.LWZ_x04_SOL,
+        ):
+            coordinator = StiebelEltronModbusLWZDataCoordinator(
+                hass,
+                entry,
+                detected_model,
+                unit,
+                host,
+            )
+        else:
+            _create_unsupported_controller_issue(
+                hass, entry, getattr(detected_model, "value", detected_model)
+            )
+            raise ConfigEntryError(
+                translation_domain=DOMAIN,
+                translation_key="unsupported_controller",
+                translation_placeholders={
+                    "model_id": str(getattr(detected_model, "value", detected_model))
+                },
+            )
+
+        # Established controller families keep their existing migrations. The
+        # experimental WPM G entry has no legacy entities and stays isolated
+        # from these model-specific assumptions.
+        async_migrate_device_identifier(hass, entry)
+        async_remove_unsupported_wpmsystem_runtime_sensors(hass, entry, detected_model)
+        await async_migrate_unique_ids(hass, entry, detected_model)
+        async_remove_legacy_circulation_pump_switch(hass, entry, detected_model)
 
     # A library and integration update can add the model while this repair still
     # exists from an earlier setup attempt.
     ir.async_delete_issue(hass, DOMAIN, _unsupported_controller_issue_id(entry))
-
-    # Both have to run before the platforms are set up, so that the entities are
-    # added to the registry entries and the device that already carry their new
-    # identifiers.
-    async_migrate_device_identifier(hass, entry)
-    # Before the unique id migration, so that an entity about to be deleted is
-    # never planned, never counted as a duplicate, and never reported by the
-    # Repair the migration raises for the duplicates it finds.
-    async_remove_unsupported_wpmsystem_runtime_sensors(hass, entry, model)
-    await async_migrate_unique_ids(hass, entry, model)
-    async_remove_legacy_circulation_pump_switch(hass, entry, model)
 
     entry.runtime_data = coordinator
 
@@ -188,7 +207,9 @@ async def async_setup_entry(
             translation_placeholders={"error": str(exception)},
         ) from exception
 
-    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(
+        entry, _platforms_for_entry(entry)
+    )
 
     return True
 
@@ -198,7 +219,9 @@ async def async_unload_entry(
     entry: StiebelEltronConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
-    return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+    return await hass.config_entries.async_unload_platforms(
+        entry, _platforms_for_entry(entry)
+    )
 
 
 async def async_remove_entry(

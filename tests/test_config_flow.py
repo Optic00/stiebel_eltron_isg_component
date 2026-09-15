@@ -18,10 +18,24 @@ from pystiebeleltron import (
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.stiebel_eltron_isg.const import DOMAIN, UNIT_ID
+from custom_components.stiebel_eltron_isg.const import (
+    CONF_CONTROLLER_TYPE,
+    CONTROLLER_TYPE_AUTO,
+    CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    DOMAIN,
+    UNIT_ID,
+)
 
-USER_INPUT = {CONF_HOST: "1.1.1.1", CONF_PORT: 502}
-RECONFIGURE_INPUT = {CONF_HOST: "2.2.2.2", CONF_PORT: 502}
+USER_INPUT = {
+    CONF_HOST: "1.1.1.1",
+    CONF_PORT: 502,
+    CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_AUTO,
+}
+RECONFIGURE_INPUT = {
+    CONF_HOST: "2.2.2.2",
+    CONF_PORT: 502,
+    CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_AUTO,
+}
 DHCP_DISCOVERY = DhcpServiceInfo(
     ip="1.1.1.2",
     hostname="servicewelt",
@@ -55,6 +69,37 @@ async def test_full_flow(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Stiebel Eltron"
     assert result["data"] == USER_INPUT
+
+
+async def test_explicit_wpmg_flow_skips_automatic_detection(
+    hass: HomeAssistant,
+    mock_get_controller_model: MagicMock,
+    mock_modbus_connection: MockModbusConnection,
+) -> None:
+    """WPM G is enabled only by an explicit read-only selection."""
+    unit = mock_modbus_connection.for_unit(UNIT_ID)
+    unit.input.update({6020: 2791, 6021: 2720, 6023: 2943, 6024: 2938})
+    unit.input.update({6099: 1500, 6100: 5562})
+    user_input = {
+        CONF_HOST: "1.1.1.1",
+        CONF_PORT: 502,
+        CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    }
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == user_input
+    mock_get_controller_model.assert_not_called()
+    assert [(event.address, event.count) for event in unit.read_events] == [
+        (6020, 5),
+        (6099, 2),
+    ]
 
 
 @pytest.mark.parametrize(

@@ -14,6 +14,10 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
@@ -25,9 +29,28 @@ from pystiebeleltron import (
 )
 import voluptuous as vol
 
-from .const import DEFAULT_PORT, DOMAIN, UNIT_ID
+from .const import (
+    CONF_CONTROLLER_TYPE,
+    CONTROLLER_TYPE_AUTO,
+    CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    DEFAULT_PORT,
+    DOMAIN,
+    UNIT_ID,
+)
+from .wpmg import WpmGStiebelEltronAPI
 
 _LOGGER = logging.getLogger(__name__)
+
+CONTROLLER_TYPE_OPTIONS: list[SelectOptionDict] = [
+    {
+        "value": CONTROLLER_TYPE_AUTO,
+        "label": "Automatic detection",
+    },
+    {
+        "value": CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+        "label": "WPM G (experimental, read-only)",
+    },
+]
 
 STEP_USER_DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_HOST): TextSelector(),
@@ -36,6 +59,12 @@ STEP_USER_DATA_SCHEMA = vol.Schema({
             NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
         ),
         vol.Coerce(int),
+    ),
+    vol.Optional(CONF_CONTROLLER_TYPE, default=CONTROLLER_TYPE_AUTO): SelectSelector(
+        SelectSelectorConfig(
+            options=CONTROLLER_TYPE_OPTIONS,
+            mode=SelectSelectorMode.DROPDOWN,
+        )
     ),
 })
 
@@ -49,16 +78,24 @@ class ControllerCheckResult:
 
 
 async def check_controller_model(
-    hass: HomeAssistant, host: str, port: int
+    hass: HomeAssistant,
+    host: str,
+    port: int,
+    controller_type: str = CONTROLLER_TYPE_AUTO,
 ) -> ControllerCheckResult:
-    """Check if the controller model is valid."""
+    """Check automatic detection or the explicitly selected WPM G subset."""
     try:
         async with async_get_temporary_unit(
             hass,
             ModbusTcpParams(host=host, port=port),
             UNIT_ID,
         ) as unit:
-            await get_controller_model(unit)
+            if controller_type == CONTROLLER_TYPE_WPM_G_EXPERIMENTAL:
+                # This only verifies that the evidenced WPM G blocks can be
+                # read. It is deliberately not automatic model detection.
+                await WpmGStiebelEltronAPI(unit).async_update()
+            else:
+                await get_controller_model(unit)
     except UnknownControllerModelError as exception:
         _LOGGER.debug("Unsupported controller model %s", exception.model_id)
         return ControllerCheckResult(
@@ -140,7 +177,10 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_PORT: user_input[CONF_PORT],
             })
             check_result = await check_controller_model(
-                self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
+                self.hass,
+                user_input[CONF_HOST],
+                user_input[CONF_PORT],
+                user_input[CONF_CONTROLLER_TYPE],
             )
             if check_result.error is not None:
                 errors["base"] = check_result.error
@@ -171,7 +211,10 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_PORT: user_input[CONF_PORT],
             })
             check_result = await check_controller_model(
-                self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
+                self.hass,
+                user_input[CONF_HOST],
+                user_input[CONF_PORT],
+                user_input[CONF_CONTROLLER_TYPE],
             )
             if check_result.error is not None:
                 errors["base"] = check_result.error
@@ -182,6 +225,7 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                     data_updates={
                         CONF_HOST: user_input[CONF_HOST],
                         CONF_PORT: user_input[CONF_PORT],
+                        CONF_CONTROLLER_TYPE: user_input[CONF_CONTROLLER_TYPE],
                     },
                 )
 
