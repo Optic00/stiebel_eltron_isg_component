@@ -212,3 +212,9 @@ ventilation_air_target_flow_rate
 volume_stream
 volume_stream_wp1
 volume_stream_wp2
+wpmg_brine_inlet_temperature
+wpmg_brine_outlet_temperature
+wpmg_condenser_inlet_temperature
+wpmg_condenser_outlet_temperature
+wpmg_dhw_temperature_weighted
+wpmg_outside_temperature_averaged

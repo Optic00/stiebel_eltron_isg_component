@@ -32,15 +32,18 @@ from custom_components.stiebel_eltron_isg import (
     switch,
 )
 from custom_components.stiebel_eltron_isg.const import UNIT_ID
+from custom_components.stiebel_eltron_isg.wpmg import WpmGStiebelEltronAPI
 
 WPM = "wpm"
 WPM_3I = "wpm_3i"
 LWZ = "lwz"
+WPMG = "wpmg"
 
 _API_CLASSES = {
     WPM: WpmStiebelEltronAPI,
     WPM_3I: Wpm3iStiebelEltronAPI,
     LWZ: LwzStiebelEltronAPI,
+    WPMG: WpmGStiebelEltronAPI,
 }
 
 # button is left out on purpose: its descriptions carry a coordinator level
@@ -76,6 +79,7 @@ _DESCRIPTION_LISTS: list[tuple[str, str, list[Any]]] = [
     ("WPM_INVERTER_POWER_SENSOR_TYPES", WPM, sensor.WPM_INVERTER_POWER_SENSOR_TYPES),
     ("WPM_3I_SENSOR_TYPES", WPM_3I, sensor.WPM_3I_SENSOR_TYPES),
     ("LWZ_SENSOR_TYPES", LWZ, sensor.LWZ_SENSOR_TYPES),
+    ("WPMG_SENSOR_TYPES", WPMG, sensor.WPMG_SENSOR_TYPES),
     ("ENERGY_DAILY_SENSOR_TYPES", WPM, sensor.ENERGY_DAILY_SENSOR_TYPES),
     ("ENERGY_DAILY_SENSOR_TYPES", WPM_3I, sensor.ENERGY_DAILY_SENSOR_TYPES),
     ("LWZ_ENERGY_DAILY_SENSOR_TYPES", LWZ, sensor.LWZ_ENERGY_DAILY_SENSOR_TYPES),

@@ -1,5 +1,7 @@
 """Constants for stiebel_eltron_isg."""
 
+from enum import Enum
+
 # Base component constants
 DEFAULT_NAME = "Stiebel Eltron ISG"
 ATTR_MANUFACTURER = "Stiebel Eltron"
@@ -8,6 +10,17 @@ DEFAULT_HOST_NAME = ""
 DEFAULT_SCAN_INTERVAL = 30
 DEFAULT_PORT = 502
 UNIT_ID = 1
+
+CONF_CONTROLLER_TYPE = "controller_type"
+CONTROLLER_TYPE_AUTO = "auto"
+CONTROLLER_TYPE_WPM_G_EXPERIMENTAL = "wpm_g_experimental"
+
+
+class ExperimentalControllerModel(Enum):
+    """Controller models implemented locally for bounded hardware testing."""
+
+    WPM_G = CONTROLLER_TYPE_WPM_G_EXPERIMENTAL
+
 
 # Config flow error keys
 ERROR_ALREADY_CONFIGURED = "already_configured"
@@ -29,6 +42,12 @@ DEWPOINT_TEMPERATURE_HK1 = "dew_point_temperature_hk1"
 DEWPOINT_TEMPERATURE_HK2 = "dew_point_temperature_hk2"
 DEWPOINT_TEMPERATURE_HK3 = "dew_point_temperature_hk3"
 OUTDOOR_TEMPERATURE = "outdoor_temperature"
+WPMG_OUTSIDE_TEMPERATURE_AVERAGED = "wpmg_outside_temperature_averaged"
+WPMG_DHW_TEMPERATURE_WEIGHTED = "wpmg_dhw_temperature_weighted"
+WPMG_BRINE_INLET_TEMPERATURE = "wpmg_brine_inlet_temperature"
+WPMG_BRINE_OUTLET_TEMPERATURE = "wpmg_brine_outlet_temperature"
+WPMG_CONDENSER_INLET_TEMPERATURE = "wpmg_condenser_inlet_temperature"
+WPMG_CONDENSER_OUTLET_TEMPERATURE = "wpmg_condenser_outlet_temperature"
 ACTUAL_TEMPERATURE_HK1 = "actual_temperature_hk1"
 TARGET_TEMPERATURE_HK1 = "target_temperature_hk1"
 ACTUAL_TEMPERATURE_HK2 = "actual_temperature_hk2"

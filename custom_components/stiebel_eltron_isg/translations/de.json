@@ -5,11 +5,13 @@
                 "description": "Geben Sie die Verbindungsdaten für Ihre Stiebel Eltron ISG Wärmepumpe ein.",
                 "data": {
                     "host": "Die IP-Adresse des Stiebel Eltron ISG",
-                    "port": "Der TCP Port des Stiebel Eltron ISG (z.B. 502)"
+                    "port": "Der TCP Port des Stiebel Eltron ISG (z.B. 502)",
+                    "controller_type": "Reglertyp"
                 },
                 "data_description": {
                     "host": "Die IP-Adresse oder der Hostname des Stiebel Eltron ISG Webservers.",
-                    "port": "Der Modbus-TCP-Port des ISG (Standard: 502)."
+                    "port": "Der Modbus-TCP-Port des ISG (Standard: 502).",
+                    "controller_type": "Lassen Sie die automatische Erkennung für unterstützte Regelungen aktiviert. Wählen Sie WPM G nur für den experimentellen, rein lesenden ISG-Test aus Issue #684."
                 }
             },
             "discovery_confirm": {
@@ -19,11 +21,13 @@
                 "description": "Aktualisieren Sie die Verbindungsdaten für Ihre Stiebel Eltron ISG Wärmepumpe.",
                 "data": {
                     "host": "Die IP-Adresse des Stiebel Eltron ISG",
-                    "port": "Der TCP Port des Stiebel Eltron ISG (z.B. 502)"
+                    "port": "Der TCP Port des Stiebel Eltron ISG (z.B. 502)",
+                    "controller_type": "Reglertyp"
                 },
                 "data_description": {
                     "host": "Die IP-Adresse oder der Hostname des Stiebel Eltron ISG Webservers.",
-                    "port": "Der Modbus-TCP-Port des ISG (Standard: 502)."
+                    "port": "Der Modbus-TCP-Port des ISG (Standard: 502).",
+                    "controller_type": "Lassen Sie die automatische Erkennung für unterstützte Regelungen aktiviert. Wählen Sie WPM G nur für den experimentellen, rein lesenden ISG-Test aus Issue #684."
                 }
             }
         },
@@ -122,6 +126,24 @@
             },
             "outdoor_temperature": {
                 "name": "Außentemperatur"
+            },
+            "wpmg_outside_temperature_averaged": {
+                "name": "Gemittelte Außentemperatur"
+            },
+            "wpmg_dhw_temperature_weighted": {
+                "name": "Gewichtete Warmwassertemperatur"
+            },
+            "wpmg_brine_inlet_temperature": {
+                "name": "Sole-Eintrittstemperatur"
+            },
+            "wpmg_brine_outlet_temperature": {
+                "name": "Sole-Austrittstemperatur"
+            },
+            "wpmg_condenser_inlet_temperature": {
+                "name": "Verflüssiger-Eintrittstemperatur"
+            },
+            "wpmg_condenser_outlet_temperature": {
+                "name": "Verflüssiger-Austrittstemperatur"
             },
             "actual_temperature_hk1": {
                 "name": "Ist-Temperatur HK 1"

@@ -5,11 +5,13 @@
                 "description": "Enter the connection details for your Stiebel Eltron ISG heat pump.",
                 "data": {
                     "host": "Host",
-                    "port": "Port"
+                    "port": "Port",
+                    "controller_type": "Controller type"
                 },
                 "data_description": {
                     "host": "The IP address or hostname of the Stiebel Eltron ISG web server.",
-                    "port": "The Modbus TCP port of the ISG (default: 502)."
+                    "port": "The Modbus TCP port of the ISG (default: 502).",
+                    "controller_type": "Keep automatic detection for supported controllers. Select WPM G only for the experimental, read-only ISG test described in issue #684."
                 }
             },
             "discovery_confirm": {
@@ -19,11 +21,13 @@
                 "description": "Update the connection details for your Stiebel Eltron ISG heat pump.",
                 "data": {
                     "host": "Host",
-                    "port": "Port"
+                    "port": "Port",
+                    "controller_type": "Controller type"
                 },
                 "data_description": {
                     "host": "The IP address or hostname of the Stiebel Eltron ISG web server.",
-                    "port": "The Modbus TCP port of the ISG (default: 502)."
+                    "port": "The Modbus TCP port of the ISG (default: 502).",
+                    "controller_type": "Keep automatic detection for supported controllers. Select WPM G only for the experimental, read-only ISG test described in issue #684."
                 }
             }
         },
@@ -127,6 +131,24 @@
             },
             "outdoor_temperature": {
                 "name": "Outdoor Temperature"
+            },
+            "wpmg_outside_temperature_averaged": {
+                "name": "Average Outside Temperature"
+            },
+            "wpmg_dhw_temperature_weighted": {
+                "name": "Weighted DHW Temperature"
+            },
+            "wpmg_brine_inlet_temperature": {
+                "name": "Brine Inlet Temperature"
+            },
+            "wpmg_brine_outlet_temperature": {
+                "name": "Brine Outlet Temperature"
+            },
+            "wpmg_condenser_inlet_temperature": {
+                "name": "Condenser Inlet Temperature"
+            },
+            "wpmg_condenser_outlet_temperature": {
+                "name": "Condenser Outlet Temperature"
             },
             "actual_temperature_hk1": {
                 "name": "Actual Temperature HK 1"

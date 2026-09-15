@@ -27,15 +27,23 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.stiebel_eltron_isg.const import (
     COMPRESSOR_HEATING,
+    CONF_CONTROLLER_TYPE,
+    CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
     CURRENT_POWER_CONSUMPTION,
     DOMAIN,
     UNIT_ID,
 )
 from custom_components.stiebel_eltron_isg.entity import build_unique_id
 from custom_components.stiebel_eltron_isg.migration import duplicate_entity_issue_id
-from custom_components.stiebel_eltron_isg.sensor import WPM_SENSOR_TYPES
+from custom_components.stiebel_eltron_isg.sensor import (
+    WPM_SENSOR_TYPES,
+    WPMG_SENSOR_TYPES,
+)
 from custom_components.stiebel_eltron_isg.wpm3i_coordinator import (
     StiebelEltronModbusWPM3iDataCoordinator,
+)
+from custom_components.stiebel_eltron_isg.wpmg import (
+    StiebelEltronModbusWpmGDataCoordinator,
 )
 
 
@@ -67,6 +75,42 @@ async def test_async_setup_entry_selects_wpm_3i_coordinator(
         mock_config_entry.runtime_data,
         StiebelEltronModbusWPM3iDataCoordinator,
     )
+
+
+async def test_async_setup_entry_selects_explicit_read_only_wpmg(
+    hass: HomeAssistant,
+    mock_get_controller_model: MagicMock,
+    mock_modbus_connection: MockModbusConnection,
+) -> None:
+    """Explicit WPM G setup bypasses model detection and exposes six sensors."""
+    unit = mock_modbus_connection.for_unit(UNIT_ID)
+    unit.input.update({6020: 2791, 6021: 2720, 6023: 2943, 6024: 2938})
+    unit.input.update({6099: 1500, 6100: 5562})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Stiebel Eltron WPM G",
+        data={
+            CONF_HOST: "1.1.1.1",
+            CONF_PORT: 502,
+            CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert isinstance(entry.runtime_data, StiebelEltronModbusWpmGDataCoordinator)
+    mock_get_controller_model.assert_not_called()
+    unique_ids = {
+        entity.unique_id
+        for entity in er.async_entries_for_config_entry(
+            er.async_get(hass), entry.entry_id
+        )
+    }
+    assert unique_ids == {
+        build_unique_id(entry, description.key) for description in WPMG_SENSOR_TYPES
+    }
 
 
 async def test_setup_registers_every_wpm_sensor(

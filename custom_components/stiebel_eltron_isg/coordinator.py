@@ -24,6 +24,7 @@ from custom_components.stiebel_eltron_isg.const import (
     ATTR_MANUFACTURER,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    ExperimentalControllerModel,
 )
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
@@ -33,6 +34,7 @@ _LOGGER: logging.Logger = logging.getLogger(__package__)
 # boundary while the coordinator's own interface and data remain typed.
 type AnyStiebelEltronDataCoordinator = StiebelEltronDataCoordinator[Any]
 type StiebelEltronConfigEntry = ConfigEntry[AnyStiebelEltronDataCoordinator]
+type SupportedControllerModel = ControllerModel | ExperimentalControllerModel
 
 
 def _is_read_only_write_error(err: AttributeError, field: str) -> bool:
@@ -44,12 +46,14 @@ def _is_read_only_write_error(err: AttributeError, field: str) -> bool:
     )
 
 
-def coordinator_display_name(model: ControllerModel) -> str:
+def coordinator_display_name(model: SupportedControllerModel) -> str:
     """Return the display name used for a controller model.
 
     The unique id migration has to rebuild this exact string for entities that
     were created by an earlier release, so both places derive it from here.
     """
+    if model is ExperimentalControllerModel.WPM_G:
+        return "Stiebel Eltron WPM G (experimental)"
     return f"Stiebel Eltron {model.name}"
 
 
@@ -66,7 +70,7 @@ class StiebelEltronConnectionParams:
     """Connection parameters for Stiebel Eltron ISG."""
 
     host: str
-    model: ControllerModel
+    model: SupportedControllerModel
 
 
 class StiebelEltronDataCoordinator[T: StiebelEltronApi](
@@ -82,7 +86,7 @@ class StiebelEltronDataCoordinator[T: StiebelEltronApi](
         params: StiebelEltronConnectionParams,
     ) -> None:
         """Initialize the Modbus hub."""
-        self._model: ControllerModel = params.model
+        self._model: SupportedControllerModel = params.model
         self._host = params.host
         self._api = api_client
         self._refresh_generation = 0
@@ -114,7 +118,7 @@ class StiebelEltronDataCoordinator[T: StiebelEltronApi](
         return self._host
 
     @property
-    def model(self) -> ControllerModel:
+    def model(self) -> SupportedControllerModel:
         """Return the controller model of the Stiebel Eltron ISG."""
         return self._model
 
@@ -133,6 +137,8 @@ class StiebelEltronDataCoordinator[T: StiebelEltronApi](
             return "WPMsystem"
         if self._model == ControllerModel.LWZ_R290:
             return "LWZ R290"
+        if self._model is ExperimentalControllerModel.WPM_G:
+            return "WPM G (experimental)"
         # Fall back to the enum name for a clear, readable representation
         return f"other model ({self._model.name})"
 
