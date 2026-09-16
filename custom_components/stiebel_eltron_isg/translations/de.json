@@ -64,6 +64,9 @@
         },
         "write_failed": {
             "message": "Die Einstellung {field} konnte wegen eines Kommunikationsfehlers mit der Wärmepumpe nicht geschrieben werden."
+        },
+        "wpmg_diagnostic_in_progress": {
+            "message": "Eine WPM-G-Diagnose wird bereits ausgeführt."
         }
     },
     "issues": {
@@ -773,6 +776,9 @@
         "button": {
             "reset_heatpump": {
                 "name": "Wärmepumpe zurücksetzen"
+            },
+            "wpmg_run_diagnostic": {
+                "name": "WPM-G-Diagnose ausführen"
             }
         },
         "select": {

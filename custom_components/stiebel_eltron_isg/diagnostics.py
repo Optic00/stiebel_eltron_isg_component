@@ -28,7 +28,7 @@ def _diagnostics_for_entry(
     coordinator = entry.runtime_data
     data = {str(k): v for k, v in coordinator.get_raw_data().items() if v is not None}
 
-    return {
+    result = {
         "config_entry": async_redact_data(entry.data, CONFIG_FIELDS_TO_REDACT),
         "options": async_redact_data(entry.options, OPTIONS_FIELDS_TO_REDACT),
         "data": [
@@ -39,6 +39,10 @@ def _diagnostics_for_entry(
             },
         ],
     }
+    diagnostic_report = getattr(coordinator, "diagnostic_report", None)
+    if diagnostic_report is not None:
+        result["wpmg_diagnostic"] = diagnostic_report
+    return result
 
 
 async def async_get_config_entry_diagnostics(

@@ -10,9 +10,10 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import RESET_HEATPUMP
+from .const import RESET_HEATPUMP, WPMG_RUN_DIAGNOSTIC, ExperimentalControllerModel
 from .coordinator import AnyStiebelEltronDataCoordinator, StiebelEltronConfigEntry
 from .entity import StiebelEltronISGEntity
+from .wpmg import StiebelEltronModbusWpmGDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +45,25 @@ BUTTONS = [
 ]
 
 
+async def _async_run_wpmg_diagnostic(
+    coordinator: AnyStiebelEltronDataCoordinator,
+) -> None:
+    """Run the WPM G diagnostic on its model-specific coordinator."""
+    if not isinstance(coordinator, StiebelEltronModbusWpmGDataCoordinator):
+        raise TypeError("WPM G diagnostics require the WPM G coordinator")
+    await coordinator.async_run_wpmg_diagnostic()
+
+
+WPMG_BUTTONS = [
+    StiebelEltronISGButtonDescription(
+        key=WPMG_RUN_DIAGNOSTIC,
+        translation_key=WPMG_RUN_DIAGNOSTIC,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        press_action=_async_run_wpmg_diagnostic,
+    ),
+]
+
+
 async def async_setup_entry(
     _hass: HomeAssistant,
     entry: StiebelEltronConfigEntry,
@@ -52,9 +72,14 @@ async def async_setup_entry(
     """Set up the select platform."""
     coordinator = entry.runtime_data
 
+    descriptions = (
+        WPMG_BUTTONS
+        if coordinator.model is ExperimentalControllerModel.WPM_G
+        else BUTTONS
+    )
     async_add_devices(
         StiebelEltronISGButtonEntity(coordinator, entry, description)
-        for description in BUTTONS
+        for description in descriptions
     )
 
 

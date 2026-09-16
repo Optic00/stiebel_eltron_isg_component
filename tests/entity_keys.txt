@@ -228,3 +228,4 @@ wpmg_condenser_inlet_temperature
 wpmg_condenser_outlet_temperature
 wpmg_dhw_temperature_weighted
 wpmg_outside_temperature_averaged
+wpmg_run_diagnostic
