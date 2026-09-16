@@ -1,5 +1,6 @@
 """Button platform for stiebel_eltron_isg."""
 
+import asyncio
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 import logging
@@ -8,16 +9,24 @@ from typing import Any
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import RESET_HEATPUMP, WPMG_RUN_DIAGNOSTIC, ExperimentalControllerModel
+from .const import (
+    DOMAIN,
+    RESET_HEATPUMP,
+    WPMG_RUN_DIAGNOSTIC,
+    ExperimentalControllerModel,
+)
 from .coordinator import AnyStiebelEltronDataCoordinator, StiebelEltronConfigEntry
 from .entity import StiebelEltronISGEntity
 from .wpmg import StiebelEltronModbusWpmGDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PARALLEL_UPDATES = 1
+# Each entity serializes its own action below. Disabling the platform-wide
+# semaphore lets a second WPM G press reach the rejection check immediately.
+PARALLEL_UPDATES = 0
 
 
 @dataclass(frozen=True)
@@ -96,11 +105,21 @@ class StiebelEltronISGButtonEntity(StiebelEltronISGEntity, ButtonEntity):
     ) -> None:
         """Initialize the button."""
         self.entity_description = description
+        self._press_lock = asyncio.Lock()
         super().__init__(coordinator, config_entry)
 
     async def async_press(self) -> None:
         """Trigger the button action."""
-        await self.entity_description.press_action(self.coordinator)
+        if (
+            self.entity_description.key == WPMG_RUN_DIAGNOSTIC
+            and self._press_lock.locked()
+        ):
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="wpmg_diagnostic_in_progress",
+            )
+        async with self._press_lock:
+            await self.entity_description.press_action(self.coordinator)
 
     @property
     def entity_registry_enabled_default(self) -> bool:
