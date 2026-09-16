@@ -5,7 +5,12 @@ import json
 from types import SimpleNamespace
 
 from homeassistant.exceptions import HomeAssistantError
-from modbus_connection import ModbusError
+from modbus_connection import (
+    GatewayPathUnavailableError,
+    GatewayTargetError,
+    IllegalDataAddressError,
+    ModbusConnectionError,
+)
 from modbus_connection.mock import MockModbusConnection, ReadEvent
 import pytest
 
@@ -63,6 +68,8 @@ def test_wpmg_surface_is_read_only_and_matches_sensor_accessors() -> None:
 async def test_wpmg_diagnostic_reads_each_documented_input_once() -> None:
     """The one-shot diagnostic uses FC04 only and remains JSON serializable."""
     unit = MockModbusConnection().for_unit(UNIT_ID)
+    writes = []
+    unit.on_write(writes.append)
     first_wire_address = WPMG_DOCUMENTED_INPUT_REFERENCES[0] - 30001
     unit.input[first_wire_address] = 0xFFFF
     api = WpmGStiebelEltronAPI(unit)
@@ -75,9 +82,13 @@ async def test_wpmg_diagnostic_reads_each_documented_input_once() -> None:
         for reference in WPMG_DOCUMENTED_INPUT_REFERENCES
     ]
     assert report["function_code"] == 4
+    assert report["status"] == "completed"
+    assert report["completed"] is True
+    assert report["aborted"] is False
     assert report["register_count"] == 163
     assert report["successful_registers"] == 163
     assert report["failed_registers"] == 0
+    assert report["skipped_registers"] == 0
     assert report["registers"][0] == {
         "documented_reference": 36000,
         "primary_address": 6000,
@@ -87,13 +98,14 @@ async def test_wpmg_diagnostic_reads_each_documented_input_once() -> None:
         "raw_hex": "0xFFFF",
         "timestamp_utc": report["registers"][0]["timestamp_utc"],
     }
+    assert not writes
     json.dumps(report)
 
 
 async def test_wpmg_diagnostic_records_errors_per_register() -> None:
     """One rejected address must not hide the remaining diagnostic results."""
     unit = MockModbusConnection().for_unit(UNIT_ID)
-    unit.fail_read(6000, ModbusError("unsupported"), register_type="input")
+    unit.fail_read(6000, IllegalDataAddressError(), register_type="input")
     api = WpmGStiebelEltronAPI(unit)
 
     report = await api.async_run_diagnostic(message_spacing=0)
@@ -105,12 +117,163 @@ async def test_wpmg_diagnostic_records_errors_per_register() -> None:
             "primary_address": 6001,
             "wire_address": 6000,
             "status": "error",
-            "error_type": "ModbusError",
+            "error_type": "IllegalDataAddressError",
+            "exception_code": 2,
             "timestamp_utc": failed[0]["timestamp_utc"],
         }
     ]
+    assert report["status"] == "completed"
     assert report["successful_registers"] == 162
     assert report["failed_registers"] == 1
+    assert report["skipped_registers"] == 0
+
+
+async def test_wpmg_diagnostic_aborts_after_three_communication_errors() -> None:
+    """A dead link cannot cause one timeout for every documented register."""
+    unit = MockModbusConnection().for_unit(UNIT_ID)
+    for wire_address in (5999, 6000, 6001):
+        unit.fail_read(
+            wire_address,
+            ModbusConnectionError("connection lost"),
+            register_type="input",
+        )
+    api = WpmGStiebelEltronAPI(unit)
+
+    report = await api.async_run_diagnostic(message_spacing=0)
+
+    assert unit.read_events == [
+        ReadEvent("input", 5999, 1),
+        ReadEvent("input", 6000, 1),
+        ReadEvent("input", 6001, 1),
+    ]
+    assert report["status"] == "aborted"
+    assert report["completed"] is False
+    assert report["aborted"] is True
+    assert report["abort_reason"] == "consecutive_communication_errors"
+    assert report["successful_registers"] == 0
+    assert report["failed_registers"] == 3
+    assert report["skipped_registers"] == 160
+    assert len(report["registers"]) == 163
+
+
+@pytest.mark.parametrize(
+    "gateway_error",
+    [GatewayPathUnavailableError(), GatewayTargetError()],
+)
+async def test_wpmg_diagnostic_counts_gateway_errors_as_communication_failures(
+    gateway_error: Exception,
+) -> None:
+    """Gateway failures behind the ISG stop the scan after three responses."""
+    unit = MockModbusConnection().for_unit(UNIT_ID)
+    for wire_address in (5999, 6000, 6001):
+        unit.fail_read(wire_address, gateway_error, register_type="input")
+    api = WpmGStiebelEltronAPI(unit)
+
+    report = await api.async_run_diagnostic(message_spacing=0)
+
+    assert report["status"] == "aborted"
+    assert report["abort_reason"] == "consecutive_communication_errors"
+    assert report["failed_registers"] == 3
+    assert report["skipped_registers"] == 160
+    assert [row["exception_code"] for row in report["registers"][:3]] == [
+        gateway_error.exception_code
+    ] * 3
+
+
+async def test_wpmg_diagnostic_has_an_overall_timeout() -> None:
+    """The complete scan remains time-bounded even if one request hangs."""
+
+    async def read_input_registers(_address: int, _count: int) -> list[int]:
+        await asyncio.sleep(60)
+        return [0]
+
+    api = WpmGStiebelEltronAPI(
+        SimpleNamespace(read_input_registers=read_input_registers)
+    )
+
+    report = await api.async_run_diagnostic(
+        message_spacing=0,
+        total_timeout=0.01,
+    )
+
+    assert report["status"] == "aborted"
+    assert report["abort_reason"] == "overall_timeout"
+    assert report["successful_registers"] == 0
+    assert report["failed_registers"] == 1
+    assert report["skipped_registers"] == 162
+    assert report["registers"][0]["error_type"] == "DiagnosticTimeoutError"
+
+
+async def test_wpmg_diagnostic_retains_partial_report_when_cancelled() -> None:
+    """A cancelled coordinator run retains its live and final partial report."""
+    second_read_started = asyncio.Event()
+    never_finish = asyncio.Event()
+    calls = 0
+
+    async def read_input_registers(_address: int, _count: int) -> list[int]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return [42]
+        second_read_started.set()
+        await never_finish.wait()
+        return [0]
+
+    coordinator = StiebelEltronModbusWpmGDataCoordinator.__new__(
+        StiebelEltronModbusWpmGDataCoordinator
+    )
+    coordinator._api = WpmGStiebelEltronAPI(
+        SimpleNamespace(read_input_registers=read_input_registers)
+    )
+    coordinator._diagnostic_lock = asyncio.Lock()
+    coordinator._last_diagnostic_report = None
+    task = asyncio.create_task(coordinator.async_run_wpmg_diagnostic())
+    await second_read_started.wait()
+    report = coordinator.diagnostic_report
+    assert report is not None
+    assert report["status"] == "running"
+    assert report["successful_registers"] == 1
+    assert report["failed_registers"] == 0
+
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert report["status"] == "cancelled"
+    assert report["abort_reason"] == "cancelled"
+    assert report["successful_registers"] == 1
+    assert report["failed_registers"] == 1
+    assert report["skipped_registers"] == 161
+    assert report["registers"][0]["raw_u16"] == 42
+    assert report["registers"][1]["error_type"] == "CancelledError"
+
+
+async def test_wpmg_diagnostic_retains_partial_report_on_unexpected_error() -> None:
+    """An unexpected read failure finalizes the report before propagating."""
+    calls = 0
+
+    async def read_input_registers(_address: int, _count: int) -> list[int]:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return [42]
+        raise RuntimeError("private transport detail")
+
+    api = WpmGStiebelEltronAPI(
+        SimpleNamespace(read_input_registers=read_input_registers)
+    )
+    report: dict = {}
+
+    with pytest.raises(RuntimeError, match="private transport detail"):
+        await api.async_run_diagnostic(message_spacing=0, report=report)
+
+    assert report["status"] == "error"
+    assert report["abort_reason"] == "unexpected_error"
+    assert report["successful_registers"] == 1
+    assert report["failed_registers"] == 1
+    assert report["skipped_registers"] == 161
+    assert report["registers"][1]["error_type"] == "RuntimeError"
+    assert "private transport detail" not in json.dumps(report)
 
 
 async def test_wpmg_diagnostic_rejects_overlapping_runs() -> None:
@@ -118,10 +281,11 @@ async def test_wpmg_diagnostic_rejects_overlapping_runs() -> None:
     started = asyncio.Event()
     finish = asyncio.Event()
 
-    async def run_diagnostic() -> dict[str, int]:
+    async def run_diagnostic(*, report: dict) -> dict:
         started.set()
         await finish.wait()
-        return {"report_version": 1}
+        report["report_version"] = 2
+        return report
 
     coordinator = StiebelEltronModbusWpmGDataCoordinator.__new__(
         StiebelEltronModbusWpmGDataCoordinator
@@ -138,4 +302,4 @@ async def test_wpmg_diagnostic_rejects_overlapping_runs() -> None:
     assert exception_info.value.translation_key == "wpmg_diagnostic_in_progress"
     finish.set()
     await first_run
-    assert coordinator.diagnostic_report == {"report_version": 1}
+    assert coordinator.diagnostic_report == {"report_version": 2}

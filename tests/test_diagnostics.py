@@ -131,7 +131,7 @@ async def test_diagnostics_with_real_library_components(
 async def test_diagnostics_include_last_wpmg_scan(hass: HomeAssistant) -> None:
     """The runtime-only WPM G report is included in the HA download."""
     report = {
-        "report_version": 1,
+        "report_version": 2,
         "function_code": 4,
         "registers": [
             {
