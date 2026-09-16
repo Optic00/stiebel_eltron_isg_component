@@ -32,6 +32,7 @@ from custom_components.stiebel_eltron_isg.const import (
     CURRENT_POWER_CONSUMPTION,
     DOMAIN,
     UNIT_ID,
+    WPMG_RUN_DIAGNOSTIC,
 )
 from custom_components.stiebel_eltron_isg.entity import build_unique_id
 from custom_components.stiebel_eltron_isg.migration import duplicate_entity_issue_id
@@ -110,7 +111,7 @@ async def test_async_setup_entry_selects_explicit_read_only_wpmg(
     }
     assert unique_ids == {
         build_unique_id(entry, description.key) for description in WPMG_SENSOR_TYPES
-    }
+    } | {build_unique_id(entry, WPMG_RUN_DIAGNOSTIC)}
 
 
 async def test_setup_registers_every_wpm_sensor(

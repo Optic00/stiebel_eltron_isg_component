@@ -6,8 +6,8 @@ It is not for the direct Genesis/display Modbus endpoint discussed separately.
 
 The alpha does not auto-detect WPM G. Select **WPM G (experimental,
 read-only)** explicitly during setup. It creates six temperature sensors and
-does not load button, climate, number, select, switch or binary-sensor
-platforms. It contains no writable WPM G fields.
+one diagnostic button. It does not load climate, number, select, switch or
+binary-sensor platforms and contains no writable WPM G fields.
 
 ## Register scope
 
@@ -64,10 +64,23 @@ semantic proof.
 
 ## Feedback needed
 
-After at least two refreshes, record the six entity values and simultaneous
-display readings. Report any unavailable entity, spikes, sign errors or update
-failures, plus the exact heat-pump model, controller software and ISG firmware.
-Do not include the ISG address, credentials or serial number.
+After at least two refreshes, press **Run WPM G diagnostics** once. The button
+performs one FC04 read for each of the 163 documented primary-heat-pump input
+registers. Unsupported addresses are recorded individually and do not abort
+the remaining scan. The scan does not read holding registers and does not
+write anything. It normally takes several seconds; do not press the button a
+second time while it is running.
+
+When the button finishes, download the integration diagnostics from Home
+Assistant. The WPM G report is kept in memory only and disappears on restart.
+Check the JSON before sharing it; Home Assistant redacts the configured ISG
+host, and the report itself contains only register addresses, raw values,
+timestamps and per-register result status.
+
+Also record the six entity values and simultaneous display readings. Report
+any unavailable entity, spikes, sign errors or update failures, plus the exact
+heat-pump model, controller software and ISG firmware. Do not include the ISG
+address, credentials or serial number.
 
 Automatic model detection, room and buffer values, heating-circuit assignment,
 secondary heat pumps, counters, status registers and every holding register

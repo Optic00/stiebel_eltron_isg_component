@@ -16,7 +16,10 @@ from pystiebeleltron.wpm3i import Wpm3iStiebelEltronAPI
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.stiebel_eltron_isg.const import DOMAIN
+from custom_components.stiebel_eltron_isg.const import (
+    DOMAIN,
+    ExperimentalControllerModel,
+)
 from custom_components.stiebel_eltron_isg.coordinator import (
     StiebelEltronDataCoordinator,
 )
@@ -121,5 +124,35 @@ async def test_diagnostics_with_real_library_components(
     assert "sg_ready_operating_state" in result["data"][0]
     assert "operating_mode" in result["data"][0]
     assert result["data"][1] == {"model": model.name, "model_id": model.value}
+    assert result["config_entry"][CONF_HOST] == REDACTED
+    assert "private.example" not in json.dumps(result, cls=ExtendedJSONEncoder)
+
+
+async def test_diagnostics_include_last_wpmg_scan(hass: HomeAssistant) -> None:
+    """The runtime-only WPM G report is included in the HA download."""
+    report = {
+        "report_version": 1,
+        "function_code": 4,
+        "registers": [
+            {
+                "documented_reference": 36000,
+                "wire_address": 5999,
+                "raw_u16": 42,
+            }
+        ],
+    }
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_HOST: "private.example", CONF_PORT: 502},
+    )
+    entry.runtime_data = SimpleNamespace(
+        model=ExperimentalControllerModel.WPM_G,
+        get_raw_data=dict,
+        diagnostic_report=report,
+    )
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert result["wpmg_diagnostic"] == report
     assert result["config_entry"][CONF_HOST] == REDACTED
     assert "private.example" not in json.dumps(result, cls=ExtendedJSONEncoder)
