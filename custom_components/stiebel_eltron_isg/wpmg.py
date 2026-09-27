@@ -312,6 +312,11 @@ class StiebelEltronModbusWpmGDataCoordinator(
         """Return the last in-memory WPM G diagnostic report."""
         return self._last_diagnostic_report
 
+    @property
+    def polling_report(self) -> dict[str, Any]:
+        """Expose normal-poll failures alongside the independent full scan."""
+        return self._api.polling_report
+
     async def async_run_wpmg_diagnostic(self) -> None:
         """Run one diagnostic without allowing overlapping scans."""
         if self._diagnostic_lock.locked():
@@ -324,3 +329,4 @@ class StiebelEltronModbusWpmGDataCoordinator(
             report: dict[str, Any] = {}
             self._last_diagnostic_report = report
             await self._diagnostics.async_run_diagnostic(report=report)
+            self._api.retry_failed_registers()

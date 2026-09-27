@@ -157,16 +157,11 @@ from .const import (
     VOLUME_STREAM,
     VOLUME_STREAM_WP1,
     VOLUME_STREAM_WP2,
-    WPMG_BRINE_INLET_TEMPERATURE,
-    WPMG_BRINE_OUTLET_TEMPERATURE,
-    WPMG_CONDENSER_INLET_TEMPERATURE,
-    WPMG_CONDENSER_OUTLET_TEMPERATURE,
-    WPMG_DHW_TEMPERATURE_WEIGHTED,
-    WPMG_OUTSIDE_TEMPERATURE_AVERAGED,
     ExperimentalControllerModel,
 )
 from .coordinator import AnyStiebelEltronDataCoordinator, StiebelEltronConfigEntry
 from .entity import StiebelEltronISGEntity
+from .wpmg_entities import WPMG_MEASUREMENTS, wpmg_accessor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1311,30 +1306,30 @@ LWZ_SENSOR_TYPES = (
 )
 
 WPMG_SENSOR_TYPES = [
-    create_temperature_entity_description(
-        WPMG_OUTSIDE_TEMPERATURE_AVERAGED,
-        lambda api: api.system_values.outside_temperature_averaged,
-    ),
-    create_temperature_entity_description(
-        WPMG_DHW_TEMPERATURE_WEIGHTED,
-        lambda api: api.system_values.dhw_temperature_weighted,
-    ),
-    create_temperature_entity_description(
-        WPMG_BRINE_INLET_TEMPERATURE,
-        lambda api: api.system_values.brine_inlet_temperature,
-    ),
-    create_temperature_entity_description(
-        WPMG_BRINE_OUTLET_TEMPERATURE,
-        lambda api: api.system_values.brine_outlet_temperature,
-    ),
-    create_temperature_entity_description(
-        WPMG_CONDENSER_INLET_TEMPERATURE,
-        lambda api: api.system_values.condenser_inlet_temperature,
-    ),
-    create_temperature_entity_description(
-        WPMG_CONDENSER_OUTLET_TEMPERATURE,
-        lambda api: api.system_values.condenser_outlet_temperature,
-    ),
+    StiebelEltronSensorEntityDescription(
+        key=f"wpmg_{attribute}",
+        translation_key=f"wpmg_{attribute}",
+        native_unit_of_measurement=unit or None,
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class={
+            "°C": SensorDeviceClass.TEMPERATURE,
+            "bar": SensorDeviceClass.PRESSURE,
+            "A": SensorDeviceClass.CURRENT,
+            "V": SensorDeviceClass.VOLTAGE,
+            "W": SensorDeviceClass.POWER,
+        }.get(unit),
+        entity_registry_enabled_default=attribute
+        in {
+            "outside_temperature_averaged",
+            "dhw_temperature_weighted",
+            "brine_inlet_temperature",
+            "brine_outlet_temperature",
+            "condenser_inlet_temperature",
+            "condenser_outlet_temperature",
+        },
+        modbus_register=wpmg_accessor(component, attribute),
+    )
+    for component, attribute, unit in WPMG_MEASUREMENTS
 ]
 
 

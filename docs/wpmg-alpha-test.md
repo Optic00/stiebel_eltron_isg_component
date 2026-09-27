@@ -1,7 +1,9 @@
-# WPM G read-only alpha test
+# WPM G original six-temperature alpha test
 
 For the current source branch, first read the [development dependency gate](wpmg-development.md).
-The instructions below describe hardware testing after that gate is satisfied.
+This page preserves the original six-temperature alpha and its display comparison.
+The expanded source now includes 149 read-only fields; see
+[register coverage](wpmg-register-coverage.md). It is not a packaged alpha release.
 
 This test build is limited to the ISG-connected WPM G route discussed in
 [issue #684](https://github.com/pail23/stiebel_eltron_isg_component/issues/684).

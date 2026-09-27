@@ -503,6 +503,153 @@
             },
             "extract_air_temperature": {
                 "name": "Extract Air Temperature"
+            },
+            "wpmg_buffer_cylinder_temperature": {
+                "name": "Buffer cylinder temperature"
+            },
+            "wpmg_heating_circuit_1_flow_temperature": {
+                "name": "Heating circuit 1 flow temperature"
+            },
+            "wpmg_heating_circuit_2_flow_temperature": {
+                "name": "Heating circuit 2 flow temperature"
+            },
+            "wpmg_heating_circuit_3_flow_temperature": {
+                "name": "Heating circuit 3 flow temperature"
+            },
+            "wpmg_heating_circuit_4_flow_temperature": {
+                "name": "Heating circuit 4 flow temperature"
+            },
+            "wpmg_heating_circuit_5_flow_temperature": {
+                "name": "Heating circuit 5 flow temperature"
+            },
+            "wpmg_heating_circuit_2_return_temperature": {
+                "name": "Heating circuit 2 return temperature"
+            },
+            "wpmg_heating_circuit_3_return_temperature": {
+                "name": "Heating circuit 3 return temperature"
+            },
+            "wpmg_heating_circuit_4_return_temperature": {
+                "name": "Heating circuit 4 return temperature"
+            },
+            "wpmg_heating_circuit_5_return_temperature": {
+                "name": "Heating circuit 5 return temperature"
+            },
+            "wpmg_cooling_circuit_return_temperature": {
+                "name": "Cooling circuit return temperature"
+            },
+            "wpmg_cooling_cylinder_temperature": {
+                "name": "Cooling cylinder temperature"
+            },
+            "wpmg_cooling_cylinder_return_temperature": {
+                "name": "Cooling cylinder return temperature"
+            },
+            "wpmg_cooling_cylinder_flow_temperature": {
+                "name": "Cooling cylinder flow temperature"
+            },
+            "wpmg_dhw_draw_off_control_flow_temperature": {
+                "name": "DHW draw-off control flow temperature"
+            },
+            "wpmg_dhw_draw_off_control_return_temperature": {
+                "name": "DHW draw-off control return temperature"
+            },
+            "wpmg_dhw_charging_system_return_temperature": {
+                "name": "DHW charging system return temperature"
+            },
+            "wpmg_dhw_draw_off_control_cylinder_temperature": {
+                "name": "DHW draw-off control cylinder temperature"
+            },
+            "wpmg_system_sensor_upper_dhw_temperature": {
+                "name": "System sensor, upper DHW temperature"
+            },
+            "wpmg_system_sensor_lower_dhw_temperature": {
+                "name": "System sensor, lower DHW temperature"
+            },
+            "wpmg_hot_gas_temperature": {
+                "name": "Hot gas temperature"
+            },
+            "wpmg_liquid_line_temperature": {
+                "name": "Liquid line temperature"
+            },
+            "wpmg_suction_gas_temperature": {
+                "name": "Suction gas temperature"
+            },
+            "wpmg_pool_flow_temperature": {
+                "name": "Pool flow temperature"
+            },
+            "wpmg_pool_return_temperature": {
+                "name": "Pool return temperature"
+            },
+            "wpmg_hot_gas_mode_dhw_flow_temperature": {
+                "name": "Hot gas mode DHW flow temperature"
+            },
+            "wpmg_evaporation_temperature_in_high_pressure_range": {
+                "name": "Evaporation temperature in high pressure range"
+            },
+            "wpmg_condensation_temperature_in_high_pressure_range": {
+                "name": "Condensation temperature in high pressure range"
+            },
+            "wpmg_condensation_temperature_in_low_pressure_range": {
+                "name": "Condensation temperature in low pressure range"
+            },
+            "wpmg_superheating": {
+                "name": "Superheating"
+            },
+            "wpmg_supercooling": {
+                "name": "Supercooling"
+            },
+            "wpmg_pressure_low_pressure_side": {
+                "name": "Pressure, low pressure side"
+            },
+            "wpmg_pressure_high_pressure_side": {
+                "name": "Pressure, high pressure side"
+            },
+            "wpmg_l1_current": {
+                "name": "L1 current"
+            },
+            "wpmg_l2_current": {
+                "name": "L2 current"
+            },
+            "wpmg_l3_current": {
+                "name": "L3 current"
+            },
+            "wpmg_l1_n_voltage": {
+                "name": "L1-N voltage"
+            },
+            "wpmg_l2_n_voltage": {
+                "name": "L2-N voltage"
+            },
+            "wpmg_l3_n_voltage": {
+                "name": "L3-N voltage"
+            },
+            "wpmg_l1_l2_voltage": {
+                "name": "L1-L2 voltage"
+            },
+            "wpmg_l2_l3_voltage": {
+                "name": "L2-L3 voltage"
+            },
+            "wpmg_l3_l1_voltage": {
+                "name": "L3-L1 voltage"
+            },
+            "wpmg_l1_power_consumption": {
+                "name": "L1 power consumption"
+            },
+            "wpmg_l2_power_consumption": {
+                "name": "L2 power consumption"
+            },
+            "wpmg_l3_power_consumption": {
+                "name": "L3 power consumption"
+            },
+            "wpmg_set_buffer_cylinder_temperature": {
+                "name": "Set buffer cylinder temperature"
+            },
+            "wpmg_current_output_stage_compressor": {
+                "name": "Current output stage, compressor"
+            },
+            "wpmg_current_output_stage_internal_booster_heater": {
+                "name": "Current output stage, internal booster heater"
+            },
+            "wpmg_percentage_compressor_speed": {
+                "name": "Percentage compressor speed"
             }
         },
         "binary_sensor": {
@@ -676,6 +823,288 @@
             },
             "filter_ventilation_air": {
                 "name": "Filter Ventilation Air"
+            },
+            "wpmg_sg_ready_input_1": {
+                "name": "SG Ready input 1"
+            },
+            "wpmg_sg_ready_input_2": {
+                "name": "SG Ready input 2"
+            },
+            "wpmg_external_stop_pool_heating": {
+                "name": "External stop, pool heating"
+            },
+            "wpmg_external_start_brine_pump": {
+                "name": "External start, brine pump"
+            },
+            "wpmg_start_delay_active": {
+                "name": "Start delay active"
+            },
+            "wpmg_control_signal_external_booster_heater": {
+                "name": "Control signal, external booster heater"
+            },
+            "wpmg_control_signal_internal_booster_heater_stage_2": {
+                "name": "Control signal, internal booster heater, stage 2"
+            },
+            "wpmg_control_signal_heating_circuit_1_circulation_pump": {
+                "name": "Control signal, heating circuit 1, circulation pump"
+            },
+            "wpmg_control_signal_condenser": {
+                "name": "Control signal, condenser"
+            },
+            "wpmg_control_signal_internal_booster_heater_stage_1": {
+                "name": "Control signal, internal booster heater, stage 1"
+            },
+            "wpmg_control_signal_hot_gas_circulation_pump": {
+                "name": "Control signal, hot gas circulation pump"
+            },
+            "wpmg_control_signal_brine_pump": {
+                "name": "Control signal, brine pump"
+            },
+            "wpmg_control_signal_external_booster_heater_dhw_circulation_pump": {
+                "name": "Control signal, external booster heater, DHW circulation pump"
+            },
+            "wpmg_control_signal_external_relay_for_brine_pump": {
+                "name": "Control signal, external relay for brine pump"
+            },
+            "wpmg_feedback_external_booster_heater": {
+                "name": "Feedback, external booster heater"
+            },
+            "wpmg_feedback_internal_booster_heater": {
+                "name": "Feedback, internal booster heater"
+            },
+            "wpmg_control_signal_hot_gas_control": {
+                "name": "Control signal, hot gas control"
+            },
+            "wpmg_heat_pump_off": {
+                "name": "Heat pump OFF"
+            },
+            "wpmg_heat_pump_ready_to_start": {
+                "name": "Heat pump ready to start"
+            },
+            "wpmg_control_signal_dhw_draw_off_control_flow_dhw_circulation_pump": {
+                "name": "Control signal, DHW draw-off control, flow, DHW circulation pump"
+            },
+            "wpmg_control_signal_dhw_charging_system_control": {
+                "name": "Control signal, DHW charging system control"
+            },
+            "wpmg_control_signal_dhw_charging_system_dhw_circulation_pump": {
+                "name": "Control signal, DHW charging system, DHW circulation pump"
+            },
+            "wpmg_control_signal_dhw_draw_off_control_cylinder_heating": {
+                "name": "Control signal, DHW draw-off control, cylinder heating"
+            },
+            "wpmg_control_signal_cooling_circuit_dhw_circulation_pump": {
+                "name": "Control signal, cooling circuit, DHW circulation pump"
+            },
+            "wpmg_control_signal_pool_dhw_circulation_pump": {
+                "name": "Control signal, pool, DHW circulation pump"
+            },
+            "wpmg_control_signal_cooling_circuit_control": {
+                "name": "Control signal, cooling circuit control"
+            },
+            "wpmg_control_signal_pool_control": {
+                "name": "Control signal, pool control"
+            },
+            "wpmg_note_if_mixing_valve_used_for_passive_cooling": {
+                "name": "Note, if mixing valve used for passive cooling"
+            },
+            "wpmg_control_signal_compressor": {
+                "name": "Control signal, compressor"
+            },
+            "wpmg_compressor_cannot_start": {
+                "name": "Compressor cannot start"
+            },
+            "wpmg_level_1_notification": {
+                "name": "Level 1 notification"
+            },
+            "wpmg_level_2_notification": {
+                "name": "Level 2 notification"
+            },
+            "wpmg_level_3_notification": {
+                "name": "Level 3 notification"
+            },
+            "wpmg_level_1_notification_high_pressure": {
+                "name": "Level 1 notification, high pressure"
+            },
+            "wpmg_level_1_notification_low_pressure": {
+                "name": "Level 1 notification, low pressure"
+            },
+            "wpmg_level_1_notification_hot_gas_temperature": {
+                "name": "Level 1 notification, hot gas temperature"
+            },
+            "wpmg_level_1_notification_operating_pressure": {
+                "name": "Level 1 notification, operating pressure"
+            },
+            "wpmg_level_1_notification_hot_gas_line_sensor": {
+                "name": "Level 1 notification, hot gas line sensor"
+            },
+            "wpmg_level_1_notification_liquid_line_sensor": {
+                "name": "Level 1 notification, liquid line sensor"
+            },
+            "wpmg_level_1_notification_suction_gas_sensor": {
+                "name": "Level 1 notification, suction gas sensor"
+            },
+            "wpmg_level_1_notification_flow_rate_pressure_brine_or_condenser": {
+                "name": "Level 1 notification, flow rate / pressure, brine or condenser"
+            },
+            "wpmg_level_1_notification_bm_card_phase_sequence": {
+                "name": "Level 1 notification, BM card phase sequence"
+            },
+            "wpmg_level_1_notification_inverter_fault": {
+                "name": "Level 1 notification, inverter fault"
+            },
+            "wpmg_level_3_notification_low_source_temperature": {
+                "name": "Level 3 notification, low source temperature"
+            },
+            "wpmg_level_1_notification_low_compressor_speed": {
+                "name": "Level 1 notification, low compressor speed"
+            },
+            "wpmg_level_1_notification_low_superheating": {
+                "name": "Level 1 notification, low superheating"
+            },
+            "wpmg_level_1_notification_outside_pressure_ratio": {
+                "name": "Level 1 notification, outside pressure ratio"
+            },
+            "wpmg_level_1_notification_outside_operating_range": {
+                "name": "Level 1 notification, outside operating range"
+            },
+            "wpmg_level_1_notification_brine_temperature_outside_range": {
+                "name": "Level 1 notification, brine temperature outside range"
+            },
+            "wpmg_level_2_notification_brine_inlet_sensor": {
+                "name": "Level 2 notification, brine inlet sensor"
+            },
+            "wpmg_level_2_notification_brine_outlet_sensor": {
+                "name": "Level 2 notification, brine outlet sensor"
+            },
+            "wpmg_level_2_notification_condenser_inlet_sensor": {
+                "name": "Level 2 notification, condenser inlet sensor"
+            },
+            "wpmg_level_2_notification_condenser_outlet_sensor": {
+                "name": "Level 2 notification, condenser outlet sensor"
+            },
+            "wpmg_level_2_notification_outside_temperature_sensor": {
+                "name": "Level 2 notification, outside temperature sensor"
+            },
+            "wpmg_level_2_notification_system_flow_sensor": {
+                "name": "Level 2 notification, system flow sensor"
+            },
+            "wpmg_level_2_notification_heating_circuit_1_sensor": {
+                "name": "Level 2 notification, heating circuit 1 sensor"
+            },
+            "wpmg_level_2_notification_heating_circuit_2_sensor": {
+                "name": "Level 2 notification, heating circuit 2 sensor"
+            },
+            "wpmg_level_2_notification_heating_circuit_3_sensor": {
+                "name": "Level 2 notification, heating circuit 3 sensor"
+            },
+            "wpmg_level_2_notification_heating_circuit_4_sensor": {
+                "name": "Level 2 notification, heating circuit 4 sensor"
+            },
+            "wpmg_level_2_notification_heating_circuit_5_sensor": {
+                "name": "Level 2 notification, heating circuit 5 sensor"
+            },
+            "wpmg_level_2_notification_dhw_charging_circuit_sensor": {
+                "name": "Level 2 notification, DHW charging circuit sensor"
+            },
+            "wpmg_level_2_notification_dhw_sensor": {
+                "name": "Level 2 notification, DHW sensor"
+            },
+            "wpmg_level_2_notification_cooling_buffer_sensor": {
+                "name": "Level 2 notification, cooling buffer sensor"
+            },
+            "wpmg_level_2_notification_cooling_cylinder_flow_sensor": {
+                "name": "Level 2 notification, cooling cylinder flow sensor"
+            },
+            "wpmg_level_2_notification_cooling_circuit_return_sensor": {
+                "name": "Level 2 notification, cooling circuit return sensor"
+            },
+            "wpmg_level_2_notification_source_circuit_spread_max": {
+                "name": "Level 2 notification, source circuit, spread, max."
+            },
+            "wpmg_level_2_notification_dhw_centre_sensor": {
+                "name": "Level 2 notification, DHW centre sensor"
+            },
+            "wpmg_level_2_notification_dhw_return_sensor": {
+                "name": "Level 2 notification, DHW return sensor"
+            },
+            "wpmg_level_2_notification_dhw_hot_gas_sensor": {
+                "name": "Level 2 notification, DHW hot gas sensor"
+            },
+            "wpmg_level_2_notification_internal_booster_heater": {
+                "name": "Level 2 notification, internal booster heater"
+            },
+            "wpmg_level_3_notification_condenser_maximum_temperature": {
+                "name": "Level 3 notification, condenser maximum temperature"
+            },
+            "wpmg_level_2_notification_max_brine_inlet": {
+                "name": "Level 2 notification, max. brine inlet"
+            },
+            "wpmg_level_2_notification_min_brine_inlet": {
+                "name": "Level 2 notification, min. brine inlet"
+            },
+            "wpmg_level_2_notification_min_brine_outlet": {
+                "name": "Level 2 notification, min. brine outlet"
+            },
+            "wpmg_level_3_notification_min_dhw_circulation_return": {
+                "name": "Level 3 notification, min. DHW circulation return"
+            },
+            "wpmg_level_3_notification_min_dhw_circulation_temperature": {
+                "name": "Level 3 notification, min. DHW circulation temperature"
+            },
+            "wpmg_level_3_notification_heating_circuit_1_temperature": {
+                "name": "Level 3 notification, heating circuit 1 temperature"
+            },
+            "wpmg_level_3_notification_heating_circuit_2_temperature": {
+                "name": "Level 3 notification, heating circuit 2 temperature"
+            },
+            "wpmg_level_3_notification_heating_circuit_3_temperature": {
+                "name": "Level 3 notification, heating circuit 3 temperature"
+            },
+            "wpmg_level_3_notification_heating_circuit_4_temperature": {
+                "name": "Level 3 notification, heating circuit 4 temperature"
+            },
+            "wpmg_level_3_notification_heating_circuit_5_temperature": {
+                "name": "Level 3 notification, heating circuit 5 temperature"
+            },
+            "wpmg_level_3_notification_dhw_circulation_return_temperature": {
+                "name": "Level 3 notification, DHW circulation return temperature"
+            },
+            "wpmg_notification_central_message": {
+                "name": "Notification, central message"
+            },
+            "wpmg_level_3_notification_cooling_circuit_temperature": {
+                "name": "Level 3 notification, cooling circuit temperature"
+            },
+            "wpmg_level_3_notification_cooling_buffer_temperature": {
+                "name": "Level 3 notification, cooling buffer temperature"
+            },
+            "wpmg_level_2_notification_humidity_sensor": {
+                "name": "Level 2 notification, humidity sensor"
+            },
+            "wpmg_level_2_notification_cooling_buffer_return_sensor": {
+                "name": "Level 2 notification, cooling buffer return sensor"
+            },
+            "wpmg_level_3_notification_room_temperature_sensor": {
+                "name": "Level 3 notification, room temperature sensor"
+            },
+            "wpmg_level_1_notification_inverter_communication": {
+                "name": "Level 1 notification, inverter communication"
+            },
+            "wpmg_level_2_notification_pool_return_sensor": {
+                "name": "Level 2 notification, pool return sensor"
+            },
+            "wpmg_level_2_notification_cooling_heating_circuit_1_sensor": {
+                "name": "Level 2 notification, cooling, heating circuit 1 sensor"
+            },
+            "wpmg_level_2_notification_dhw_cylinder_sensor": {
+                "name": "Level 2 notification, DHW cylinder sensor"
+            },
+            "wpmg_level_2_notification_maximum_pasteurisation_time": {
+                "name": "Level 2 notification, maximum pasteurisation time"
+            },
+            "wpmg_level_3_notification_external_alarm": {
+                "name": "Level 3 notification, external alarm"
             }
         },
         "number": {

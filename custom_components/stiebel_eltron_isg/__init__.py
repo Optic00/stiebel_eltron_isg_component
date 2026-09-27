@@ -64,7 +64,7 @@ _ISSUE_TRACKER = "https://github.com/pail23/stiebel_eltron_isg_component/issues"
 def _platforms_for_entry(entry: StiebelEltronConfigEntry) -> list[Platform]:
     """Return only platforms supported by the configured controller mode."""
     if entry.data.get(CONF_CONTROLLER_TYPE) == CONTROLLER_TYPE_WPM_G_EXPERIMENTAL:
-        return [Platform.BUTTON, Platform.SENSOR]
+        return [Platform.BUTTON, Platform.SENSOR, Platform.BINARY_SENSOR]
     return _PLATFORMS
 
 

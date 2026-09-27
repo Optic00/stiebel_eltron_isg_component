@@ -149,11 +149,18 @@ async def test_diagnostics_include_last_wpmg_scan(hass: HomeAssistant) -> None:
         model=ExperimentalControllerModel.WPM_G,
         get_raw_data=dict,
         diagnostic_report=report,
+        polling_report={
+            "status": "partial",
+            "registers": [
+                {"wire_address": 6020, "status": "unsupported", "exception_code": 2}
+            ],
+        },
     )
 
     result = await async_get_config_entry_diagnostics(hass, entry)
 
     assert result["wpmg_diagnostic"] == report
+    assert result["wpmg_polling"]["registers"][0]["exception_code"] == 2
     assert result["config_entry"][CONF_HOST] == REDACTED
     assert "private.example" not in json.dumps(result, cls=ExtendedJSONEncoder)
 

@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigEntryState, ConfigFl
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er, issue_registry as ir
-from modbus_connection import ModbusError, ModbusTcpParams
+from modbus_connection import IllegalDataAddressError, ModbusError, ModbusTcpParams
 from modbus_connection.mock import MockModbusConnection
 from modbus_connection.tmodbus import ModbusConnection as TmodbusConnection
 from pystiebeleltron import (
@@ -25,6 +25,7 @@ from pytest_homeassistant_custom_component.common import (
     mock_platform,
 )
 
+from custom_components.stiebel_eltron_isg.binary_sensor import WPMG_BINARY_SENSOR_TYPES
 from custom_components.stiebel_eltron_isg.const import (
     COMPRESSOR_HEATING,
     CONF_CONTROLLER_TYPE,
@@ -44,6 +45,7 @@ from custom_components.stiebel_eltron_isg.wpm3i_coordinator import (
     StiebelEltronModbusWPM3iDataCoordinator,
 )
 from custom_components.stiebel_eltron_isg.wpmg import (
+    WPMG_DOCUMENTED_INPUT_REFERENCES,
     StiebelEltronModbusWpmGDataCoordinator,
 )
 
@@ -78,15 +80,22 @@ async def test_async_setup_entry_selects_wpm_3i_coordinator(
     )
 
 
+@pytest.mark.parametrize("reject_registers", [False, True])
 async def test_async_setup_entry_selects_explicit_read_only_wpmg(
     hass: HomeAssistant,
+    reject_registers: bool,
     mock_get_controller_model: MagicMock,
     mock_modbus_connection: MockModbusConnection,
 ) -> None:
-    """Explicit WPM G setup bypasses model detection and exposes six sensors."""
+    """Explicit WPM G setup bypasses model detection and exposes only read-only entities."""
     unit = mock_modbus_connection.for_unit(UNIT_ID)
     unit.input.update({6020: 2791, 6021: 2720, 6023: 2943, 6024: 2938})
     unit.input.update({6099: 1500, 6100: 5562})
+    if reject_registers:
+        for reference in WPMG_DOCUMENTED_INPUT_REFERENCES:
+            unit.fail_read(
+                reference - 30001, IllegalDataAddressError(), register_type="input"
+            )
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="Stiebel Eltron WPM G",
@@ -110,8 +119,21 @@ async def test_async_setup_entry_selects_explicit_read_only_wpmg(
         )
     }
     assert unique_ids == {
-        build_unique_id(entry, description.key) for description in WPMG_SENSOR_TYPES
+        build_unique_id(entry, description.key)
+        for description in [*WPMG_SENSOR_TYPES, *WPMG_BINARY_SENSOR_TYPES]
     } | {build_unique_id(entry, WPMG_RUN_DIAGNOSTIC)}
+
+    assert entry.runtime_data.last_update_success
+    button = next(
+        entity
+        for entity in er.async_entries_for_config_entry(
+            er.async_get(hass), entry.entry_id
+        )
+        if entity.domain == "button"
+    )
+    assert hass.states.get(button.entity_id).state != "unavailable"
+    if reject_registers:
+        assert entry.runtime_data.polling_report["status"] == "partial"
 
 
 async def test_setup_registers_every_wpm_sensor(

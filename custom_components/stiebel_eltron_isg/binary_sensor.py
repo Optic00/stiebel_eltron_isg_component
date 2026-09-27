@@ -71,9 +71,11 @@ from .const import (
     SOURCE_PUMP,
     SWITCHING_PROGRAM_ENABLED,
     VENTILATION,
+    ExperimentalControllerModel,
 )
 from .coordinator import AnyStiebelEltronDataCoordinator, StiebelEltronConfigEntry
 from .entity import StiebelEltronISGEntity
+from .wpmg_entities import WPMG_STATUSES, wpmg_accessor
 
 PARALLEL_UPDATES = 1
 
@@ -478,6 +480,19 @@ LWZ_BINARY_SENSOR_TYPES = [
 ]
 
 
+WPMG_BINARY_SENSOR_TYPES = [
+    StiebelEltronBinarySensorEntityDescription(
+        key=f"wpmg_{attribute}",
+        translation_key=f"wpmg_{attribute}",
+        device_class=BinarySensorDeviceClass.PROBLEM if component == "alarms" else None,
+        entity_category=EntityCategory.DIAGNOSTIC if component == "alarms" else None,
+        entity_registry_enabled_default=False,
+        modbus_register=wpmg_accessor(component, attribute),
+    )
+    for component, attribute in WPMG_STATUSES
+]
+
+
 async def async_setup_entry(
     _hass: HomeAssistant,
     entry: StiebelEltronConfigEntry,
@@ -486,7 +501,12 @@ async def async_setup_entry(
     """Set up the binary_sensor platform."""
     coordinator = entry.runtime_data
 
-    if coordinator.model == ControllerModel.WPM_3i:
+    if coordinator.model is ExperimentalControllerModel.WPM_G:
+        entities = [
+            StiebelEltronISGBinarySensor(coordinator, entry, description)
+            for description in WPMG_BINARY_SENSOR_TYPES
+        ]
+    elif coordinator.model == ControllerModel.WPM_3i:
         entities = [
             StiebelEltronISGBinarySensor(
                 coordinator,

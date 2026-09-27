@@ -3,7 +3,9 @@
 import asyncio
 import json
 from types import SimpleNamespace
+from unittest.mock import Mock
 
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.exceptions import HomeAssistantError
 from modbus_connection import (
     GatewayPathUnavailableError,
@@ -15,6 +17,10 @@ from modbus_connection.mock import MockModbusConnection, ReadEvent
 from pystiebeleltron.wpmg import WpmGStiebelEltronAPI, WpmGSystemValues
 import pytest
 
+from custom_components.stiebel_eltron_isg.binary_sensor import (
+    WPMG_BINARY_SENSOR_TYPES,
+    StiebelEltronISGBinarySensor,
+)
 from custom_components.stiebel_eltron_isg.const import UNIT_ID
 from custom_components.stiebel_eltron_isg.sensor import WPMG_SENSOR_TYPES
 from custom_components.stiebel_eltron_isg.wpmg import (
@@ -48,9 +54,20 @@ async def test_wpmg_decodes_hardware_backed_input_registers() -> None:
     assert api.system_values.outside_temperature_averaged == 15.0
     assert api.system_values.dhw_temperature_weighted == 55.62
     assert unit.read_events == [
-        ReadEvent("input", 6020, 2),
-        ReadEvent("input", 6023, 2),
-        ReadEvent("input", 6099, 2),
+        ReadEvent("input", address, count)
+        for address, count in [
+            (6000, 34),
+            (6099, 21),
+            (6123, 5),
+            (7499, 9),
+            (7599, 5),
+            (7649, 4),
+            (7654, 3),
+            (7659, 2),
+            (7662, 1),
+            (7699, 1),
+            (8999, 64),
+        ]
     ]
 
 
@@ -288,6 +305,7 @@ async def test_wpmg_diagnostic_rejects_overlapping_runs() -> None:
         StiebelEltronModbusWpmGDataCoordinator
     )
     coordinator._diagnostics = SimpleNamespace(async_run_diagnostic=run_diagnostic)
+    coordinator._api = SimpleNamespace(retry_failed_registers=Mock())
     coordinator._diagnostic_lock = asyncio.Lock()
     coordinator._last_diagnostic_report = None
     first_run = asyncio.create_task(coordinator.async_run_wpmg_diagnostic())
@@ -300,3 +318,70 @@ async def test_wpmg_diagnostic_rejects_overlapping_runs() -> None:
     finish.set()
     await first_run
     assert coordinator.diagnostic_report == {"report_version": 2}
+    coordinator._api.retry_failed_registers.assert_called_once_with()
+
+
+def test_wpmg_entity_units_and_defaults() -> None:
+    """Differences avoid absolute-temperature conversion; new fields are opt-in."""
+    descriptions = {description.key: description for description in WPMG_SENSOR_TYPES}
+    assert len(descriptions) == 55
+    assert len(WPMG_BINARY_SENSOR_TYPES) == 94
+    assert (
+        sum(
+            description.entity_registry_enabled_default
+            for description in descriptions.values()
+        )
+        == 6
+    )
+    assert all(
+        not description.entity_registry_enabled_default
+        for description in WPMG_BINARY_SENSOR_TYPES
+    )
+    for key in ("wpmg_superheating", "wpmg_supercooling"):
+        assert descriptions[key].native_unit_of_measurement == "K"
+        assert descriptions[key].device_class is None
+    assert descriptions["wpmg_l1_current"].device_class is SensorDeviceClass.CURRENT
+    assert descriptions["wpmg_l1_n_voltage"].device_class is SensorDeviceClass.VOLTAGE
+    assert (
+        descriptions["wpmg_l1_power_consumption"].device_class
+        is SensorDeviceClass.POWER
+    )
+    assert (
+        descriptions["wpmg_pressure_low_pressure_side"].device_class
+        is SensorDeviceClass.PRESSURE
+    )
+
+
+@pytest.mark.parametrize(
+    ("raw", "available", "state"),
+    [
+        (0, True, False),
+        (1, True, True),
+        (2, False, False),
+        (0x8000, False, False),
+        (0xFFFF, False, False),
+    ],
+)
+async def test_wpmg_invalid_alarm_is_unavailable(raw, available, state) -> None:
+    """A non-boolean code must never present a false all-clear to HA."""
+    unit = MockModbusConnection().for_unit(UNIT_ID)
+    unit.input[8999] = raw
+    api = WpmGStiebelEltronAPI(unit)
+    await api.async_update()
+    description = next(
+        item
+        for item in WPMG_BINARY_SENSOR_TYPES
+        if item.key == "wpmg_level_1_notification"
+    )
+    entity = StiebelEltronISGBinarySensor.__new__(StiebelEltronISGBinarySensor)
+    entity.modbus_register = description.modbus_register
+    entity.bit_number = description.bit_number
+    entity.coordinator = SimpleNamespace(
+        last_update_success=True,
+        get_value=lambda accessor: accessor(api),
+        has_value=lambda accessor: accessor(api) is not None,
+    )
+    assert entity.available is available
+    assert entity.is_on is state
+    entity.coordinator.last_update_success = False
+    assert entity.available is False

@@ -42,6 +42,9 @@ def _diagnostics_for_entry(
     diagnostic_report = getattr(coordinator, "diagnostic_report", None)
     if diagnostic_report is not None:
         result["wpmg_diagnostic"] = diagnostic_report
+    polling_report = getattr(coordinator, "polling_report", None)
+    if polling_report is not None:
+        result["wpmg_polling"] = polling_report
     return async_redact_data(result, CONFIG_FIELDS_TO_REDACT)
 
 

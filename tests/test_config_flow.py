@@ -96,9 +96,17 @@ async def test_explicit_wpmg_flow_skips_automatic_detection(
     assert result["data"] == user_input
     mock_get_controller_model.assert_not_called()
     assert [(event.address, event.count) for event in unit.read_events] == [
-        (6020, 2),
-        (6023, 2),
-        (6099, 2),
+        (6000, 34),
+        (6099, 21),
+        (6123, 5),
+        (7499, 9),
+        (7599, 5),
+        (7649, 4),
+        (7654, 3),
+        (7659, 2),
+        (7662, 1),
+        (7699, 1),
+        (8999, 64),
     ]
 
 
