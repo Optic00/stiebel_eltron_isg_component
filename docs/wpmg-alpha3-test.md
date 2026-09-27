@@ -36,3 +36,7 @@ There are 55 numeric and 94 status/alarm fields. Fourteen ambiguous registers
 remain excluded; see [register coverage](wpmg-register-coverage.md).
 Package checks use isolated HA environments on macOS with simulated registers.
 They do not establish Linux-container, HACS-UI or physical hardware compatibility.
+
+## Local runtime observation
+
+On my macOS test setup, Python 3.14.5 crashed during shutdown after the entities loaded. With the same code and wheel, repeated starts and stops passed on Python 3.14.7. The cause is unresolved; Linux container behavior still needs verification.
