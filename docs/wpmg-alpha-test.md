@@ -2,8 +2,8 @@
 
 For the current source branch, first read the [development dependency gate](wpmg-development.md).
 This page preserves the original six-temperature alpha and its display comparison.
-The expanded source now includes 149 read-only fields; see
-[register coverage](wpmg-register-coverage.md). It is not a packaged alpha release.
+For the expanded 149-field build, use the
+[alpha3 instructions](wpmg-alpha3-test.md) and [register coverage](wpmg-register-coverage.md).
 
 This test build is limited to the ISG-connected WPM G route discussed in
 [issue #684](https://github.com/pail23/stiebel_eltron_isg_component/issues/684).

@@ -2208,20 +2208,26 @@ sdist = { url = "https://files.pythonhosted.org/packages/08/64/a99f27d3b4347486c
 
 [[package]]
 name = "pystiebeleltron"
-version = "0.8.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.8.1.dev20260927+wpmg.3ecc84f"
+source = { url = "https://github.com/Optic00/python-stiebel-eltron/releases/download/wpmg-test-20260927/pystiebeleltron-0.8.1.dev20260927%2Bwpmg.3ecc84f-py3-none-any.whl" }
 dependencies = [
     { name = "modbus-connection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/df/97a950dadce154eff12b302b224c1c7e82466ad1d8b5e45c7f0ae57079b8/pystiebeleltron-0.8.0.tar.gz", hash = "sha256:1d9e7fb6ba77b599e295c34670fce288eb91e09e8353e3ce163acb9e37f8eb7f", size = 18179, upload-time = "2026-09-18T16:37:07.687Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/f0/f7626cbdd1988c18263c7ed9719b7a6c02ca156f3dd48ea7f8bf3adb00fb/pystiebeleltron-0.8.0-py3-none-any.whl", hash = "sha256:6105f027508fd5f2f40810192e7f676e43128e40c45d48843d3d27e8e29ad378", size = 22588, upload-time = "2026-09-18T16:37:06.326Z" },
+    { url = "https://github.com/Optic00/python-stiebel-eltron/releases/download/wpmg-test-20260927/pystiebeleltron-0.8.1.dev20260927%2Bwpmg.3ecc84f-py3-none-any.whl", hash = "sha256:cd55e847415180b11ed821e7c96677f1ab30a3c721fbfdef561bdcecaf82b67f" },
 ]
 
 [package.optional-dependencies]
 tmodbus = [
     { name = "modbus-connection", extra = ["tmodbus"] },
 ]
+
+[package.metadata]
+requires-dist = [
+    { name = "modbus-connection", specifier = "==4.10.0" },
+    { name = "modbus-connection", extras = ["tmodbus"], marker = "extra == 'tmodbus'", specifier = "==4.10.0" },
+]
+provides-extras = ["tmodbus"]
 
 [[package]]
 name = "pytest"
@@ -2767,7 +2773,7 @@ requires-dist = [
     { name = "colorlog", specifier = ">=6.12.0" },
     { name = "modbus-connection", extras = ["tmodbus"], specifier = "==4.10.0" },
     { name = "pymodbus", specifier = "==3.13.1" },
-    { name = "pystiebeleltron", extras = ["tmodbus"], specifier = "==0.8.0" },
+    { name = "pystiebeleltron", extras = ["tmodbus"], url = "https://github.com/Optic00/python-stiebel-eltron/releases/download/wpmg-test-20260927/pystiebeleltron-0.8.1.dev20260927%2Bwpmg.3ecc84f-py3-none-any.whl" },
     { name = "pytest-homeassistant-custom-component", specifier = ">=0.13.359" },
     { name = "tmodbus", specifier = "==0.6.2" },
 ]

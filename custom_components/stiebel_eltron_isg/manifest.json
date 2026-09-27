@@ -23,7 +23,7 @@
     "tmodbus"
   ],
   "requirements": [
-    "pystiebeleltron==0.8.0"
+    "pystiebeleltron @ https://github.com/Optic00/python-stiebel-eltron/releases/download/wpmg-test-20260927/pystiebeleltron-0.8.1.dev20260927%2Bwpmg.3ecc84f-py3-none-any.whl#sha256=cd55e847415180b11ed821e7c96677f1ab30a3c721fbfdef561bdcecaf82b67f"
   ],
-  "version": "2025.7.0"
+  "version": "2026.9.0-alpha.3"
 }

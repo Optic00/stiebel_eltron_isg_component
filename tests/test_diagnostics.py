@@ -31,7 +31,10 @@ from custom_components.stiebel_eltron_isg.diagnostics import (
 
 def test_raw_data_privacy_audit_matches_dependency_version() -> None:
     """A library update must trigger a new sensitive-field audit."""
-    assert importlib.metadata.version("pystiebeleltron") == "0.8.0"
+    assert (
+        importlib.metadata.version("pystiebeleltron")
+        == "0.8.1.dev20260927+wpmg.3ecc84f"
+    )
 
 
 async def test_diagnostics_redact_host_and_preserve_useful_data(

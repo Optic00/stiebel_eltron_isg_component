@@ -1,10 +1,17 @@
 # WPM G development status
 
-This branch depends on the local `pystiebeleltron` WPM G draft. The published
-0.8.0 package does not provide `pystiebeleltron.wpmg`. Do not package or install
-this branch with the unchanged manifest pin. It is not a new alpha release.
+The alpha3 branch uses an immutable fork wheel built from library draft PR
+[#93](https://github.com/ThyMYthOS/python-stiebel-eltron/pull/93), commit
+`3ecc84ff60770ed87559457b555300e34ce56743`. The manifest includes its URL and
+SHA256. The test package version is `0.8.1.dev20260927+wpmg.3ecc84f` and its
+Modbus dependency is pinned to 4.10.0, matching HA 2026.9.0 and 2026.9.3.
+The upstream library code keeps its normal dependency range.
 
-## Release order
+The published 0.8.0 package has no WPM G module. The fork wheel is a temporary
+alpha dependency, not an upstream release. Use [alpha3 instructions](wpmg-alpha3-test.md)
+for installation and rollback.
+
+## Upstream release order
 
 1. Review and release the separate library API generated from
    the three `api/wpmg_*.csv` files.
