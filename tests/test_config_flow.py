@@ -34,7 +34,6 @@ USER_INPUT = {
 RECONFIGURE_INPUT = {
     CONF_HOST: "2.2.2.2",
     CONF_PORT: 502,
-    CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_AUTO,
 }
 DHCP_DISCOVERY = DhcpServiceInfo(
     ip="1.1.1.2",
@@ -97,7 +96,8 @@ async def test_explicit_wpmg_flow_skips_automatic_detection(
     assert result["data"] == user_input
     mock_get_controller_model.assert_not_called()
     assert [(event.address, event.count) for event in unit.read_events] == [
-        (6020, 5),
+        (6020, 2),
+        (6023, 2),
         (6099, 2),
     ]
 
@@ -335,7 +335,10 @@ async def test_reconfigure_reports_unsupported_controller(
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
-    assert dict(mock_config_entry.data) == RECONFIGURE_INPUT
+    assert dict(mock_config_entry.data) == {
+        **RECONFIGURE_INPUT,
+        CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_AUTO,
+    }
 
     await hass.async_block_till_done()
     assert await hass.config_entries.async_unload(mock_config_entry.entry_id)
@@ -501,3 +504,34 @@ async def test_dhcp_discovery_errors(
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == expected_reason
+
+
+async def test_wpmg_reconfigure_preserves_controller_mode(
+    hass, mock_get_controller_model, mock_modbus_connection
+) -> None:
+    """Changing the address must not change the loaded platform family."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_HOST: "old.example",
+            CONF_PORT: 502,
+            CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+        },
+    )
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    )
+    assert CONF_CONTROLLER_TYPE not in {
+        key.schema for key in result["data_schema"].schema
+    }
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], RECONFIGURE_INPUT
+    )
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_CONTROLLER_TYPE] == CONTROLLER_TYPE_WPM_G_EXPERIMENTAL
+    assert entry.data[CONF_HOST] == RECONFIGURE_INPUT[CONF_HOST]
+    mock_get_controller_model.assert_not_called()
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()

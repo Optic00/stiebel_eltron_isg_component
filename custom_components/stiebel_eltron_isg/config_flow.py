@@ -27,6 +27,7 @@ from pystiebeleltron import (
     UnknownControllerModelError,
     get_controller_model,
 )
+from pystiebeleltron.wpmg import WpmGStiebelEltronAPI
 import voluptuous as vol
 
 from .const import (
@@ -37,7 +38,6 @@ from .const import (
     DOMAIN,
     UNIT_ID,
 )
-from .wpmg import WpmGStiebelEltronAPI
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.hass,
                 user_input[CONF_HOST],
                 user_input[CONF_PORT],
-                user_input[CONF_CONTROLLER_TYPE],
+                user_input.get(CONF_CONTROLLER_TYPE, CONTROLLER_TYPE_AUTO),
             )
             if check_result.error is not None:
                 errors["base"] = check_result.error
@@ -203,6 +203,15 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle a reconfiguration flow."""
         config_entry = self._get_reconfigure_entry()
 
+        controller_type = config_entry.data.get(
+            CONF_CONTROLLER_TYPE, CONTROLLER_TYPE_AUTO
+        )
+        reconfigure_schema = vol.Schema({
+            key: value
+            for key, value in STEP_USER_DATA_SCHEMA.schema.items()
+            if key.schema != CONF_CONTROLLER_TYPE
+        })
+
         errors: dict[str, str] = {}
         description_placeholders: dict[str, str] | None = None
         if user_input is not None:
@@ -214,7 +223,7 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.hass,
                 user_input[CONF_HOST],
                 user_input[CONF_PORT],
-                user_input[CONF_CONTROLLER_TYPE],
+                controller_type,
             )
             if check_result.error is not None:
                 errors["base"] = check_result.error
@@ -225,14 +234,14 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                     data_updates={
                         CONF_HOST: user_input[CONF_HOST],
                         CONF_PORT: user_input[CONF_PORT],
-                        CONF_CONTROLLER_TYPE: user_input[CONF_CONTROLLER_TYPE],
+                        CONF_CONTROLLER_TYPE: controller_type,
                     },
                 )
 
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
-                STEP_USER_DATA_SCHEMA,
+                reconfigure_schema,
                 user_input if user_input is not None else config_entry.data,
             ),
             errors=errors,

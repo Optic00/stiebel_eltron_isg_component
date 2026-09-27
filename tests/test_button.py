@@ -86,7 +86,7 @@ async def test_wpmg_diagnostic_button_stores_completed_report(
     unit.read_events.clear()
     writes = []
     unit.on_write(writes.append)
-    api = entry.runtime_data._api
+    api = entry.runtime_data._diagnostics
     real_diagnostic = api.async_run_diagnostic
 
     async def run_diagnostic(*, report: dict) -> dict:
@@ -147,7 +147,7 @@ async def test_wpmg_second_button_press_is_rejected_in_service_path(
         return report
 
     diagnostic = AsyncMock(side_effect=run_diagnostic)
-    entry.runtime_data._api.async_run_diagnostic = diagnostic
+    entry.runtime_data._diagnostics.async_run_diagnostic = diagnostic
     entity_id = er.async_get(hass).async_get_entity_id(
         "button",
         DOMAIN,

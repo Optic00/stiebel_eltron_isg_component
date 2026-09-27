@@ -1,5 +1,8 @@
 # WPM G read-only alpha test
 
+For the current source branch, first read the [development dependency gate](wpmg-development.md).
+The instructions below describe hardware testing after that gate is satisfied.
+
 This test build is limited to the ISG-connected WPM G route discussed in
 [issue #684](https://github.com/pail23/stiebel_eltron_isg_component/issues/684).
 It is not for the direct Genesis/display Modbus endpoint discussed separately.
@@ -90,7 +93,6 @@ remain outside this alpha.
 
 ## Roll back
 
-If this was a new experimental entry, remove that entry before downgrading. If
-an existing entry was reconfigured, first select **Automatic detection** again.
+If this was a new experimental entry, remove that entry before downgrading. The controller mode cannot be changed by reconfiguration; host and port can still be updated.
 Restore the saved `stiebel_eltron_isg` directory and restart Home Assistant.
 No device-side rollback is required because the alpha performs reads only.

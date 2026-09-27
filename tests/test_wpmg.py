@@ -12,6 +12,7 @@ from modbus_connection import (
     ModbusConnectionError,
 )
 from modbus_connection.mock import MockModbusConnection, ReadEvent
+from pystiebeleltron.wpmg import WpmGStiebelEltronAPI, WpmGSystemValues
 import pytest
 
 from custom_components.stiebel_eltron_isg.const import UNIT_ID
@@ -19,8 +20,7 @@ from custom_components.stiebel_eltron_isg.sensor import WPMG_SENSOR_TYPES
 from custom_components.stiebel_eltron_isg.wpmg import (
     WPMG_DOCUMENTED_INPUT_REFERENCES,
     StiebelEltronModbusWpmGDataCoordinator,
-    WpmGStiebelEltronAPI,
-    WpmGSystemValues,
+    WpmGDiagnostics,
 )
 
 
@@ -48,7 +48,8 @@ async def test_wpmg_decodes_hardware_backed_input_registers() -> None:
     assert api.system_values.outside_temperature_averaged == 15.0
     assert api.system_values.dhw_temperature_weighted == 55.62
     assert unit.read_events == [
-        ReadEvent("input", 6020, 5),
+        ReadEvent("input", 6020, 2),
+        ReadEvent("input", 6023, 2),
         ReadEvent("input", 6099, 2),
     ]
 
@@ -72,7 +73,7 @@ async def test_wpmg_diagnostic_reads_each_documented_input_once() -> None:
     unit.on_write(writes.append)
     first_wire_address = WPMG_DOCUMENTED_INPUT_REFERENCES[0] - 30001
     unit.input[first_wire_address] = 0xFFFF
-    api = WpmGStiebelEltronAPI(unit)
+    api = WpmGDiagnostics(unit)
 
     report = await api.async_run_diagnostic(message_spacing=0)
 
@@ -106,7 +107,7 @@ async def test_wpmg_diagnostic_records_errors_per_register() -> None:
     """One rejected address must not hide the remaining diagnostic results."""
     unit = MockModbusConnection().for_unit(UNIT_ID)
     unit.fail_read(6000, IllegalDataAddressError(), register_type="input")
-    api = WpmGStiebelEltronAPI(unit)
+    api = WpmGDiagnostics(unit)
 
     report = await api.async_run_diagnostic(message_spacing=0)
 
@@ -137,7 +138,7 @@ async def test_wpmg_diagnostic_aborts_after_three_communication_errors() -> None
             ModbusConnectionError("connection lost"),
             register_type="input",
         )
-    api = WpmGStiebelEltronAPI(unit)
+    api = WpmGDiagnostics(unit)
 
     report = await api.async_run_diagnostic(message_spacing=0)
 
@@ -167,7 +168,7 @@ async def test_wpmg_diagnostic_counts_gateway_errors_as_communication_failures(
     unit = MockModbusConnection().for_unit(UNIT_ID)
     for wire_address in (5999, 6000, 6001):
         unit.fail_read(wire_address, gateway_error, register_type="input")
-    api = WpmGStiebelEltronAPI(unit)
+    api = WpmGDiagnostics(unit)
 
     report = await api.async_run_diagnostic(message_spacing=0)
 
@@ -187,9 +188,7 @@ async def test_wpmg_diagnostic_has_an_overall_timeout() -> None:
         await asyncio.sleep(60)
         return [0]
 
-    api = WpmGStiebelEltronAPI(
-        SimpleNamespace(read_input_registers=read_input_registers)
-    )
+    api = WpmGDiagnostics(SimpleNamespace(read_input_registers=read_input_registers))
 
     report = await api.async_run_diagnostic(
         message_spacing=0,
@@ -222,7 +221,7 @@ async def test_wpmg_diagnostic_retains_partial_report_when_cancelled() -> None:
     coordinator = StiebelEltronModbusWpmGDataCoordinator.__new__(
         StiebelEltronModbusWpmGDataCoordinator
     )
-    coordinator._api = WpmGStiebelEltronAPI(
+    coordinator._diagnostics = WpmGDiagnostics(
         SimpleNamespace(read_input_registers=read_input_registers)
     )
     coordinator._diagnostic_lock = asyncio.Lock()
@@ -259,9 +258,7 @@ async def test_wpmg_diagnostic_retains_partial_report_on_unexpected_error() -> N
             return [42]
         raise RuntimeError("private transport detail")
 
-    api = WpmGStiebelEltronAPI(
-        SimpleNamespace(read_input_registers=read_input_registers)
-    )
+    api = WpmGDiagnostics(SimpleNamespace(read_input_registers=read_input_registers))
     report: dict = {}
 
     with pytest.raises(RuntimeError, match="private transport detail"):
@@ -290,7 +287,7 @@ async def test_wpmg_diagnostic_rejects_overlapping_runs() -> None:
     coordinator = StiebelEltronModbusWpmGDataCoordinator.__new__(
         StiebelEltronModbusWpmGDataCoordinator
     )
-    coordinator._api = SimpleNamespace(async_run_diagnostic=run_diagnostic)
+    coordinator._diagnostics = SimpleNamespace(async_run_diagnostic=run_diagnostic)
     coordinator._diagnostic_lock = asyncio.Lock()
     coordinator._last_diagnostic_report = None
     first_run = asyncio.create_task(coordinator.async_run_wpmg_diagnostic())

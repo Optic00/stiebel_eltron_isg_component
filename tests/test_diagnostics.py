@@ -156,3 +156,26 @@ async def test_diagnostics_include_last_wpmg_scan(hass: HomeAssistant) -> None:
     assert result["wpmg_diagnostic"] == report
     assert result["config_entry"][CONF_HOST] == REDACTED
     assert "private.example" not in json.dumps(result, cls=ExtendedJSONEncoder)
+
+
+async def test_diagnostic_download_redacts_nested_hosts(hass) -> None:
+    """Neither endpoint may expose a host in options or a nested report."""
+    private_host = "synthetic-private-host.example"
+    report = {"transport": {CONF_HOST: private_host}, "registers": [{"raw_u16": 42}]}
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_HOST: private_host},
+        options={"nested": {CONF_HOST: private_host}},
+    )
+    entry.runtime_data = SimpleNamespace(
+        model=ExperimentalControllerModel.WPM_G,
+        get_raw_data=dict,
+        diagnostic_report=report,
+    )
+    for result in (
+        await async_get_config_entry_diagnostics(hass, entry),
+        await async_get_device_diagnostics(hass, entry, SimpleNamespace()),
+    ):
+        assert private_host not in json.dumps(result, cls=ExtendedJSONEncoder)
+        assert result["wpmg_diagnostic"]["registers"][0]["raw_u16"] == 42
+    assert report["transport"][CONF_HOST] == private_host
