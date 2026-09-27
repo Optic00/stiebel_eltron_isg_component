@@ -16,8 +16,9 @@ update. Connection, busy, protocol and timeout errors fail the whole poll.
 Normal polling splits a block only after Modbus exception code 2. A rejected
 single address becomes unavailable immediately, including after earlier valid
 reads. It is retried after five minutes; successful retries restore the value.
-Learned block subdivisions also support devices that reject long reads. They
-are held only for the current API instance and reset when the entry reloads.
+Learned block subdivisions also support devices that reject long reads. Parent blocks are re-probed after five minutes and recovered subdivisions
+are removed. Learned splits are also cleared after a manual diagnostic scan
+and when the entry reloads.
 
 Each poll permits at most 149 normal single-word reads plus 32 exploratory
 requests and has a 20-second deadline. Healthy devices use eleven block reads.
@@ -27,14 +28,16 @@ blocks. A request timeout or the overall deadline fails the entire poll.
 
 Download Home Assistant diagnostics for `wpmg_polling`: FC04 references, field
 names, raw words, current availability reasons, failed request details,
-timestamps, rejection counts and learned block subdivisions. The report keeps
+timestamps, poll duration, rejection counts and learned block subdivisions. The report keeps
 one row per declared address, not an unbounded event log. It distinguishes a
 real device sentinel, an invalid decoded value, a rejected address, pending
 retry and an exhausted exploration budget. Exception messages and connection
 identifiers are not copied into this report.
 
 The diagnostic button still scans all 163 documented addresses independently,
-including the excluded fields, and produces `wpmg_diagnostic`. After a completed
+including the excluded fields, and produces `wpmg_diagnostic`. Normal polling
+and the manual scan share a lock so they do not compete for the device.
+The normal polling deadline starts after the scan releases that lock. After a completed
 scan, normal polling can re-probe temporarily skipped addresses immediately on
 its next cycle. Setup remains possible if the device responds but all fields
 are unavailable; this is not automatic model detection.

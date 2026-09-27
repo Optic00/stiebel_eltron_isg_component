@@ -3,7 +3,7 @@
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.exceptions import HomeAssistantError
@@ -242,6 +242,7 @@ async def test_wpmg_diagnostic_retains_partial_report_when_cancelled() -> None:
         SimpleNamespace(read_input_registers=read_input_registers)
     )
     coordinator._diagnostic_lock = asyncio.Lock()
+    coordinator._io_lock = asyncio.Lock()
     coordinator._last_diagnostic_report = None
     task = asyncio.create_task(coordinator.async_run_wpmg_diagnostic())
     await second_read_started.wait()
@@ -307,6 +308,7 @@ async def test_wpmg_diagnostic_rejects_overlapping_runs() -> None:
     coordinator._diagnostics = SimpleNamespace(async_run_diagnostic=run_diagnostic)
     coordinator._api = SimpleNamespace(retry_failed_registers=Mock())
     coordinator._diagnostic_lock = asyncio.Lock()
+    coordinator._io_lock = asyncio.Lock()
     coordinator._last_diagnostic_report = None
     first_run = asyncio.create_task(coordinator.async_run_wpmg_diagnostic())
     await started.wait()
@@ -385,3 +387,31 @@ async def test_wpmg_invalid_alarm_is_unavailable(raw, available, state) -> None:
     assert entity.is_on is state
     entity.coordinator.last_update_success = False
     assert entity.available is False
+
+
+async def test_wpmg_poll_waits_until_manual_scan_finishes() -> None:
+    """Waiting for a scan must not consume the normal API polling deadline."""
+    started, finish = asyncio.Event(), asyncio.Event()
+
+    async def scan(*, report):
+        started.set()
+        await finish.wait()
+
+    coordinator = StiebelEltronModbusWpmGDataCoordinator.__new__(
+        StiebelEltronModbusWpmGDataCoordinator
+    )
+    coordinator._diagnostic_lock = asyncio.Lock()
+    coordinator._io_lock = asyncio.Lock()
+    coordinator._refresh_generation = 0
+    coordinator._api = SimpleNamespace(
+        async_update=AsyncMock(), retry_failed_registers=Mock()
+    )
+    coordinator._diagnostics = SimpleNamespace(async_run_diagnostic=scan)
+    scan_task = asyncio.create_task(coordinator.async_run_wpmg_diagnostic())
+    await started.wait()
+    poll_task = asyncio.create_task(coordinator._async_update_data())
+    await asyncio.sleep(0)
+    coordinator._api.async_update.assert_not_called()
+    finish.set()
+    await asyncio.gather(scan_task, poll_task)
+    coordinator._api.async_update.assert_awaited_once()

@@ -295,6 +295,7 @@ class StiebelEltronModbusWpmGDataCoordinator(
     ) -> None:
         """Initialize the WPM G coordinator."""
         self._diagnostic_lock = asyncio.Lock()
+        self._io_lock = asyncio.Lock()
         self._diagnostics = WpmGDiagnostics(unit)
         self._last_diagnostic_report: dict[str, Any] | None = None
         super().__init__(
@@ -306,6 +307,11 @@ class StiebelEltronModbusWpmGDataCoordinator(
                 model=ExperimentalControllerModel.WPM_G,
             ),
         )
+
+    async def _async_update_data(self) -> dict[str, float | int | None]:
+        """Keep normal polling and manual scans from competing for the device."""
+        async with self._io_lock:
+            return await super()._async_update_data()
 
     @property
     def diagnostic_report(self) -> dict[str, Any] | None:
@@ -328,5 +334,6 @@ class StiebelEltronModbusWpmGDataCoordinator(
         async with self._diagnostic_lock:
             report: dict[str, Any] = {}
             self._last_diagnostic_report = report
-            await self._diagnostics.async_run_diagnostic(report=report)
-            self._api.retry_failed_registers()
+            async with self._io_lock:
+                await self._diagnostics.async_run_diagnostic(report=report)
+                self._api.retry_failed_registers()
