@@ -49,3 +49,19 @@ validate every physical value or status transition. Targeted hardware checks are
 still needed for the excluded fields and repeated block polling.
 No direct Genesis endpoint, secondary devices, counters, holding registers or
 writable controls are included.
+
+## Alpha 3 hardware feedback
+
+The [September 28 diagnostic report](https://github.com/pail23/stiebel_eltron_isg_component/issues/684#issuecomment-5880504836)
+records alpha 3 on Home Assistant 2026.9.3 in a Linux container with Python 3.14.6.
+The manual scan read all 163 documented addresses without errors. The subsequent
+normal poll used eleven requests and returned 139 usable fields; ten fields
+returned the device's `0x8000` unavailable marker. Its `partial` status reflects
+those markers, not failed reads. The 14 excluded fields remain diagnostic-only.
+
+A replay of the captured raw words reproduces the exported values, including
+the signed temperature difference and the active level-3 notification bits.
+This guards decoding against regressions; it does not independently validate
+the physical meaning of the fields. Matching display readings for the condenser
+temperatures and active notifications remain useful. This single report does
+not establish continuous updates over several hours or successful HA restarts.
