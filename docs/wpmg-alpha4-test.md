@@ -19,7 +19,9 @@ The old **Run WPM G diagnostics** button is gone. Its entry is removed from the
 entity registry on the first start.
 
 To roll back, restore the backed-up directory and restart Home Assistant. Keep
-the backup until testing is complete.
+the backup until testing is complete. Alpha 3 was built for Home Assistant
+2026.9 and pins an older Modbus library, so it may not load on 2026.11. If it
+does not, disable the entry until a fixed build is available.
 
 ## What to report
 
