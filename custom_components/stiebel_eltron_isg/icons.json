@@ -165,6 +165,96 @@
             },
             "ventilation": {
                 "default": "mdi:fan"
+            },
+            "wpmg_sg_ready_input_1": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_sg_ready_input_2": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_external_stop_pool_heating": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_external_start_brine_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_start_delay_active": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_external_booster_heater": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_internal_booster_heater_stage_2": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_heating_circuit_1_circulation_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_condenser": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_internal_booster_heater_stage_1": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_hot_gas_circulation_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_brine_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_external_booster_heater_dhw_circulation_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_external_relay_for_brine_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_feedback_external_booster_heater": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_feedback_internal_booster_heater": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_hot_gas_control": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_heat_pump_off": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_heat_pump_ready_to_start": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_dhw_draw_off_control_flow_dhw_circulation_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_dhw_charging_system_control": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_dhw_charging_system_dhw_circulation_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_dhw_draw_off_control_cylinder_heating": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_cooling_circuit_dhw_circulation_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_pool_dhw_circulation_pump": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_cooling_circuit_control": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_pool_control": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_note_if_mixing_valve_used_for_passive_cooling": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_control_signal_compressor": {
+                "default": "mdi:information-outline"
+            },
+            "wpmg_compressor_cannot_start": {
+                "default": "mdi:information-outline"
             }
         },
         "climate": {

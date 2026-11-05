@@ -77,6 +77,7 @@ from .coordinator import (
     StiebelEltronDataCoordinator,
 )
 from .entity import StiebelEltronISGEntity, ValueAccessor
+from .wpmg_entities import WPMG_STATUSES, wpmg_accessor
 
 PARALLEL_UPDATES = 1
 
@@ -481,10 +482,27 @@ LWZ_BINARY_SENSOR_TYPES = [
 ]
 
 
+# The experimental, read-only WPM G. Every entity is opt-in. A notification
+# block the controller does not serve reads as no value, so those entities are
+# unavailable, never "off".
+WPMG_BINARY_SENSOR_TYPES = [
+    StiebelEltronBinarySensorEntityDescription(
+        key=f"wpmg_{attribute}",
+        translation_key=f"wpmg_{attribute}",
+        device_class=BinarySensorDeviceClass.PROBLEM if component == "alarms" else None,
+        entity_category=EntityCategory.DIAGNOSTIC if component == "alarms" else None,
+        entity_registry_enabled_default=False,
+        modbus_register=wpmg_accessor(component, attribute),
+    )
+    for component, attribute in WPMG_STATUSES
+]
+
+
 _BINARY_SENSOR_TYPES = {
     ControllerFamily.WPM_3I: WPM_3I_BINARY_SENSOR_TYPES,
     ControllerFamily.WPM: WPM_BINARY_SENSOR_TYPES,
     ControllerFamily.LWZ: LWZ_BINARY_SENSOR_TYPES,
+    ControllerFamily.WPM_G: WPMG_BINARY_SENSOR_TYPES,
 }
 
 

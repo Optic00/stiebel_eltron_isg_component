@@ -24,16 +24,19 @@ from pystiebeleltron import ControllerModel
 from pystiebeleltron.lwz import LwzStiebelEltronAPI
 from pystiebeleltron.wpm import WpmStiebelEltronAPI
 from pystiebeleltron.wpm3i import Wpm3iStiebelEltronAPI
+from pystiebeleltron.wpmg import WpmGStiebelEltronAPI
 
 from custom_components.stiebel_eltron_isg.const import (
     ATTR_MANUFACTURER,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    ExperimentalControllerModel,
 )
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
 
 type StiebelEltronConfigEntry = ConfigEntry[StiebelEltronDataCoordinator]
+type SupportedControllerModel = ControllerModel | ExperimentalControllerModel
 
 
 def _is_read_only_write_error(err: AttributeError, field: str) -> bool:
@@ -45,12 +48,14 @@ def _is_read_only_write_error(err: AttributeError, field: str) -> bool:
     )
 
 
-def coordinator_display_name(model: ControllerModel) -> str:
+def coordinator_display_name(model: SupportedControllerModel) -> str:
     """Return the display name used for a controller model.
 
     The unique id migration has to rebuild this exact string for entities that
     were created by an earlier release, so both places derive it from here.
     """
+    if model is ExperimentalControllerModel.WPM_G:
+        return "Stiebel Eltron WPM G (experimental)"
     return f"Stiebel Eltron {model.name}"
 
 
@@ -64,6 +69,9 @@ class ControllerFamily(Enum):
     WPM_3I = "wpm_3i"
     WPM = "wpm"
     LWZ = "lwz"
+    # Experimental and read-only: no writable component, loaded without the
+    # button, number, switch, select and climate platforms.
+    WPM_G = "wpm_g"
 
 
 CONTROLLER_FAMILIES: dict[ControllerModel, ControllerFamily] = {
@@ -97,6 +105,8 @@ def create_api(family: ControllerFamily, unit: ModbusUnit) -> StiebelEltronApi:
         return Wpm3iStiebelEltronAPI(unit)
     if family is ControllerFamily.WPM:
         return WpmStiebelEltronAPI(unit)
+    if family is ControllerFamily.WPM_G:
+        return WpmGStiebelEltronAPI(unit)
     return LwzStiebelEltronAPI(unit)
 
 
@@ -123,7 +133,7 @@ class StiebelEltronDataCoordinator(DataUpdateCoordinator[None]):
         hass: HomeAssistant,
         entry: StiebelEltronConfigEntry,
         api_client: StiebelEltronApi,
-        model: ControllerModel,
+        model: SupportedControllerModel,
         host: str,
     ) -> None:
         """Initialize the Modbus hub."""
@@ -161,14 +171,26 @@ class StiebelEltronDataCoordinator(DataUpdateCoordinator[None]):
         return self._host
 
     @property
-    def model(self) -> ControllerModel:
+    def model(self) -> SupportedControllerModel:
         """Return the controller model of the Stiebel Eltron ISG."""
         return self._model
 
     @property
     def family(self) -> ControllerFamily:
         """Return the register layout family of the controller model."""
+        if self._model is ExperimentalControllerModel.WPM_G:
+            return ControllerFamily.WPM_G
         return CONTROLLER_FAMILIES[self._model]
+
+    @property
+    def dropped_optional_components(self) -> tuple[str, ...]:
+        """Return the optional components the library no longer reads.
+
+        The library drops an optional block once the controller has refused it
+        without ever having answered it. This reads the library's state and
+        performs no Modbus request.
+        """
+        return tuple(getattr(self._api, "dropped_optional_components", ()))
 
     def get_raw_data(self) -> dict[str, Any]:
         """Return the raw data from the heat pump."""
@@ -350,6 +372,13 @@ class StiebelEltronDataCoordinator(DataUpdateCoordinator[None]):
     async def async_reset_heatpump(self) -> None:
         """Reset the heat pump."""
         _LOGGER.debug("Reset the heat pump")
+        if self.family not in RESET_VALUES:
+            # The read-only WPM G has no reset register.
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="write_unsupported",
+                translation_placeholders={"field": "reset"},
+            )
         await self.write_component_value(
             "system_parameters", "reset", RESET_VALUES[self.family]
         )

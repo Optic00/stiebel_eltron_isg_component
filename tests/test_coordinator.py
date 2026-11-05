@@ -372,8 +372,11 @@ async def test_reset_heatpump_writes_the_value_of_the_family(
 
 
 def test_every_family_has_a_reset_value() -> None:
-    """A family added to the layout table cannot be left without one."""
-    assert set(RESET_VALUES) == set(ControllerFamily)
+    """A family added to the layout table cannot be left without one.
+
+    The experimental WPM G is read-only and has no reset register.
+    """
+    assert set(RESET_VALUES) == set(ControllerFamily) - {ControllerFamily.WPM_G}
     assert set(CONTROLLER_FAMILIES) == set(ControllerModel)
 
 

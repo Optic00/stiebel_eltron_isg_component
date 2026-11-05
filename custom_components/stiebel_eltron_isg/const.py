@@ -1,11 +1,31 @@
 """Constants for stiebel_eltron_isg."""
 
+from enum import Enum
+
 # Base component constants
 ATTR_MANUFACTURER = "Stiebel Eltron"
 DOMAIN = "stiebel_eltron_isg"
 DEFAULT_SCAN_INTERVAL = 30
 DEFAULT_PORT = 502
 UNIT_ID = 1
+
+# How a config entry selects its controller. Entries without the key use
+# automatic detection. WPM G cannot be detected (it refuses the model register),
+# so it is an explicit, experimental and read-only choice.
+CONF_CONTROLLER_TYPE = "controller_type"
+CONTROLLER_TYPE_AUTO = "auto"
+CONTROLLER_TYPE_WPM_G_EXPERIMENTAL = "wpm_g_experimental"
+
+
+class ExperimentalControllerModel(Enum):
+    """Controllers the library cannot detect, selected explicitly in the flow."""
+
+    WPM_G = CONTROLLER_TYPE_WPM_G_EXPERIMENTAL
+
+
+# The diagnostic scan button of the 2026.9 alpha 3 builds. It is gone, the setup
+# removes the registry entry such an entry left behind.
+WPMG_RUN_DIAGNOSTIC = "wpmg_run_diagnostic"
 
 ACTUAL_TEMPERATURE = "actual_temperature"
 TARGET_TEMPERATURE = "target_temperature"

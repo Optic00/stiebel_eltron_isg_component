@@ -182,6 +182,7 @@ from .coordinator import (
     StiebelEltronDataCoordinator,
 )
 from .entity import StiebelEltronISGEntity, ValueAccessor, async_add_when_served
+from .wpmg_entities import WPMG_MEASUREMENTS, wpmg_accessor
 
 PARALLEL_UPDATES = 1
 
@@ -1577,6 +1578,38 @@ LWZ_SENSOR_TYPES = (
     + LWZ_VENTILATION_SENSOR_TYPES
 )
 
+# The experimental, read-only WPM G. Only the six measurements below are enabled
+# by default, the rest is opt-in. Differences are shown in K, which Home
+# Assistant does not convert like an absolute temperature.
+_WPMG_DEFAULT_ENABLED = {
+    "outside_temperature_averaged",
+    "dhw_temperature_weighted",
+    "brine_inlet_temperature",
+    "brine_outlet_temperature",
+    "condenser_inlet_temperature",
+    "condenser_outlet_temperature",
+}
+_WPMG_DEVICE_CLASSES = {
+    "°C": SensorDeviceClass.TEMPERATURE,
+    "bar": SensorDeviceClass.PRESSURE,
+    "A": SensorDeviceClass.CURRENT,
+    "V": SensorDeviceClass.VOLTAGE,
+    "W": SensorDeviceClass.POWER,
+}
+
+WPMG_SENSOR_TYPES = [
+    StiebelEltronSensorEntityDescription(
+        key=f"wpmg_{attribute}",
+        translation_key=f"wpmg_{attribute}",
+        native_unit_of_measurement=unit or None,
+        state_class=SensorStateClass.MEASUREMENT,
+        device_class=_WPMG_DEVICE_CLASSES.get(unit),
+        entity_registry_enabled_default=attribute in _WPMG_DEFAULT_ENABLED,
+        modbus_register=wpmg_accessor(component, attribute),
+    )
+    for component, attribute, unit in WPMG_MEASUREMENTS
+]
+
 
 async def async_setup_entry(
     _hass: HomeAssistant,
@@ -1588,7 +1621,9 @@ async def async_setup_entry(
     model = coordinator.model
 
     descriptions: list[StiebelEltronSensorEntityDescription]
-    if coordinator.family is ControllerFamily.WPM_3I:
+    if coordinator.family is ControllerFamily.WPM_G:
+        descriptions = WPMG_SENSOR_TYPES
+    elif coordinator.family is ControllerFamily.WPM_3I:
         descriptions = WPM_3I_SENSOR_TYPES + ENERGY_DAILY_SENSOR_TYPES
     elif coordinator.family is ControllerFamily.WPM:
         descriptions = (

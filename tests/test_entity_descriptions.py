@@ -21,6 +21,7 @@ from modbus_connection.mock import MockModbusConnection
 from pystiebeleltron.lwz import LwzStiebelEltronAPI
 from pystiebeleltron.wpm import WpmStiebelEltronAPI
 from pystiebeleltron.wpm3i import Wpm3iStiebelEltronAPI
+from pystiebeleltron.wpmg import WpmGStiebelEltronAPI
 import pytest
 
 from custom_components.stiebel_eltron_isg import (
@@ -36,11 +37,13 @@ from custom_components.stiebel_eltron_isg.const import UNIT_ID
 WPM = "wpm"
 WPM_3I = "wpm_3i"
 LWZ = "lwz"
+WPM_G = "wpm_g"
 
 _API_CLASSES = {
     WPM: WpmStiebelEltronAPI,
     WPM_3I: Wpm3iStiebelEltronAPI,
     LWZ: LwzStiebelEltronAPI,
+    WPM_G: WpmGStiebelEltronAPI,
 }
 
 # button is left out on purpose: its descriptions carry a coordinator level
@@ -99,12 +102,14 @@ _DESCRIPTION_LISTS: list[tuple[str, str, list[Any]]] = [
     ("WPMSYSTEM_RUNTIME_SENSOR_TYPES", WPM, sensor.WPMSYSTEM_RUNTIME_SENSOR_TYPES),
     ("WPM_3I_SENSOR_TYPES", WPM_3I, sensor.WPM_3I_SENSOR_TYPES),
     ("LWZ_SENSOR_TYPES", LWZ, sensor.LWZ_SENSOR_TYPES),
+    ("WPMG_SENSOR_TYPES", WPM_G, sensor.WPMG_SENSOR_TYPES),
     ("ENERGY_DAILY_SENSOR_TYPES", WPM, sensor.ENERGY_DAILY_SENSOR_TYPES),
     ("ENERGY_DAILY_SENSOR_TYPES", WPM_3I, sensor.ENERGY_DAILY_SENSOR_TYPES),
     ("LWZ_ENERGY_DAILY_SENSOR_TYPES", LWZ, sensor.LWZ_ENERGY_DAILY_SENSOR_TYPES),
     ("WPM_BINARY_SENSOR_TYPES", WPM, binary_sensor.WPM_BINARY_SENSOR_TYPES),
     ("WPM_3I_BINARY_SENSOR_TYPES", WPM_3I, binary_sensor.WPM_3I_BINARY_SENSOR_TYPES),
     ("LWZ_BINARY_SENSOR_TYPES", LWZ, binary_sensor.LWZ_BINARY_SENSOR_TYPES),
+    ("WPMG_BINARY_SENSOR_TYPES", WPM_G, binary_sensor.WPMG_BINARY_SENSOR_TYPES),
     # WPMsystem and LWZ_R290, both of which are served by the WPM api.
     (
         "CIRCULATION_PUMP_BINARY_SENSOR_TYPES",
