@@ -15,6 +15,9 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
@@ -25,12 +28,20 @@ from pystiebeleltron import (
     UnknownControllerModelError,
     get_controller_model,
 )
+from pystiebeleltron.wpmg import WpmGStiebelEltronAPI
 
-from .const import DEFAULT_PORT, DOMAIN, UNIT_ID
+from .const import (
+    CONF_CONTROLLER_TYPE,
+    CONTROLLER_TYPE_AUTO,
+    CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    DEFAULT_PORT,
+    DOMAIN,
+    UNIT_ID,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-STEP_USER_DATA_SCHEMA = probatio.Schema({
+_CONNECTION_FIELDS: dict[Any, Any] = {
     probatio.Required(CONF_HOST): TextSelector(),
     probatio.Required(CONF_PORT, default=DEFAULT_PORT): probatio.All(
         NumberSelector(
@@ -38,7 +49,23 @@ STEP_USER_DATA_SCHEMA = probatio.Schema({
         ),
         probatio.Coerce(int),
     ),
+}
+
+STEP_USER_DATA_SCHEMA = probatio.Schema({
+    **_CONNECTION_FIELDS,
+    probatio.Optional(
+        CONF_CONTROLLER_TYPE, default=CONTROLLER_TYPE_AUTO
+    ): SelectSelector(
+        SelectSelectorConfig(
+            options=[CONTROLLER_TYPE_AUTO, CONTROLLER_TYPE_WPM_G_EXPERIMENTAL],
+            mode=SelectSelectorMode.DROPDOWN,
+            translation_key=CONF_CONTROLLER_TYPE,
+        )
+    ),
 })
+
+# The controller family of an existing entry is not changed by reconfiguring it.
+RECONFIGURE_DATA_SCHEMA = probatio.Schema(_CONNECTION_FIELDS)
 
 
 @dataclass(frozen=True)
@@ -50,16 +77,24 @@ class ControllerCheckResult:
 
 
 async def check_controller_model(
-    hass: HomeAssistant, host: str, port: int
+    hass: HomeAssistant,
+    host: str,
+    port: int,
+    controller_type: str = CONTROLLER_TYPE_AUTO,
 ) -> ControllerCheckResult:
-    """Check if the controller model is valid."""
+    """Check the controller, by detection or as the explicitly chosen WPM G."""
     try:
         async with async_get_temporary_unit(
             hass,
             ModbusTcpParams(host=host, port=port),
             UNIT_ID,
         ) as unit:
-            await get_controller_model(unit)
+            if controller_type == CONTROLLER_TYPE_WPM_G_EXPERIMENTAL:
+                # The WPM G refuses the controller id register. All this proves
+                # is that its documented blocks can be read; it is not detection.
+                await WpmGStiebelEltronAPI(unit).async_update()
+            else:
+                await get_controller_model(unit)
     except UnknownControllerModelError as exception:
         _LOGGER.debug("Unsupported controller model %s", exception.model_id)
         return ControllerCheckResult(
@@ -166,13 +201,24 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input[CONF_HOST], user_input[CONF_PORT]
             )
             check_result = await check_controller_model(
-                self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
+                self.hass,
+                user_input[CONF_HOST],
+                user_input[CONF_PORT],
+                user_input.get(CONF_CONTROLLER_TYPE, CONTROLLER_TYPE_AUTO),
             )
             if check_result.error is not None:
                 errors["base"] = check_result.error
                 description_placeholders = check_result.description_placeholders
             else:
-                return self.async_create_entry(title="Stiebel Eltron", data=user_input)
+                # Entries of the detected families keep the data they always had.
+                data = {
+                    key: value
+                    for key, value in user_input.items()
+                    if not (
+                        key == CONF_CONTROLLER_TYPE and value == CONTROLLER_TYPE_AUTO
+                    )
+                }
+                return self.async_create_entry(title="Stiebel Eltron", data=data)
 
         return self.async_show_form(
             step_id="user",
@@ -188,6 +234,9 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle a reconfiguration flow."""
         config_entry = self._get_reconfigure_entry()
+        controller_type = config_entry.data.get(
+            CONF_CONTROLLER_TYPE, CONTROLLER_TYPE_AUTO
+        )
 
         errors: dict[str, str] = {}
         description_placeholders: dict[str, str] | None = None
@@ -196,7 +245,10 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input[CONF_HOST], user_input[CONF_PORT]
             )
             check_result = await check_controller_model(
-                self.hass, user_input[CONF_HOST], user_input[CONF_PORT]
+                self.hass,
+                user_input[CONF_HOST],
+                user_input[CONF_PORT],
+                controller_type,
             )
             if check_result.error is not None:
                 errors["base"] = check_result.error
@@ -213,7 +265,7 @@ class StiebelEltronConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=self.add_suggested_values_to_schema(
-                STEP_USER_DATA_SCHEMA,
+                RECONFIGURE_DATA_SCHEMA,
                 user_input if user_input is not None else config_entry.data,
             ),
             errors=errors,

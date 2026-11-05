@@ -8,7 +8,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
-from modbus_connection import ModbusTcpParams, ModbusTlsParams
+from modbus_connection import ModbusConnectionError, ModbusTcpParams, ModbusTlsParams
 from modbus_connection.mock import MockModbusConnection
 from pystiebeleltron import (
     ControllerModel,
@@ -18,9 +18,17 @@ from pystiebeleltron import (
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.stiebel_eltron_isg.const import DOMAIN, UNIT_ID
+from custom_components.stiebel_eltron_isg.const import (
+    CONF_CONTROLLER_TYPE,
+    CONTROLLER_TYPE_AUTO,
+    CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    DOMAIN,
+    UNIT_ID,
+)
 
 USER_INPUT = {CONF_HOST: "1.1.1.1", CONF_PORT: 502}
+# The form fills in the default controller type, and shows it again on an error.
+FORM_VALUES = {**USER_INPUT, CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_AUTO}
 RECONFIGURE_INPUT = {CONF_HOST: "2.2.2.2", CONF_PORT: 502}
 DHCP_DISCOVERY = DhcpServiceInfo(
     ip="1.1.1.2",
@@ -86,7 +94,7 @@ async def test_form_cannot_connect(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
-    assert_suggested_values(result, USER_INPUT)
+    assert_suggested_values(result, FORM_VALUES)
 
     failing_mock.side_effect = None
 
@@ -121,7 +129,7 @@ async def test_form_cannot_acquire_shared_connection(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "link_conflict"}
-    assert_suggested_values(result, USER_INPUT)
+    assert_suggested_values(result, FORM_VALUES)
 
 
 async def test_form_unknown_exception(
@@ -142,7 +150,7 @@ async def test_form_unknown_exception(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "unknown"}
-    assert_suggested_values(result, USER_INPUT)
+    assert_suggested_values(result, FORM_VALUES)
 
     mock_get_controller_model.side_effect = None
     mock_get_controller_model.return_value = ControllerModel.LWZ  # Valid model (LWZ)
@@ -174,7 +182,7 @@ async def test_form_reports_unsupported_controller(
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "unsupported_controller"}
     assert result["description_placeholders"] == {"model_id": "165"}
-    assert_suggested_values(result, USER_INPUT)
+    assert_suggested_values(result, FORM_VALUES)
     assert hass.config_entries.async_entries(DOMAIN) == []
     assert mock_modbus_connection.connected is False
     mock_modbus_connection_class.assert_called_once_with(
@@ -604,3 +612,87 @@ async def test_reconfigure_onto_another_portless_entry_is_a_duplicate(
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
     assert config_entry.data == RECONFIGURE_INPUT
+
+
+async def test_wpm_g_flow_does_not_detect_the_model(
+    hass: HomeAssistant,
+    mock_get_controller_model: MagicMock,
+    mock_modbus_connection: MockModbusConnection,
+) -> None:
+    """WPM G is an explicit choice: it only reads its blocks, never the model."""
+    unit = mock_modbus_connection.for_unit(UNIT_ID)
+    unit.input.update({6020: 2791, 6021: 2720, 6023: 2943, 6024: 2938})
+    user_input = {
+        **USER_INPUT,
+        CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    }
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"] == user_input
+    mock_get_controller_model.assert_not_called()
+    assert [(event.register_type, event.address) for event in unit.read_events][:2] == [
+        ("input", 6000),
+        ("input", 6099),
+    ]
+    assert not unit.holding
+
+
+async def test_wpm_g_flow_reports_unreachable_controller(
+    hass: HomeAssistant, mock_modbus_connection: MockModbusConnection
+) -> None:
+    """A WPM G whose required block cannot be read is a connection error."""
+    unit = mock_modbus_connection.for_unit(UNIT_ID)
+    unit.fail_read(6000, ModbusConnectionError("lost"), register_type="input")
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {**USER_INPUT, CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_WPM_G_EXPERIMENTAL},
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_wpm_g_reconfigure_keeps_the_family(
+    hass: HomeAssistant,
+    mock_get_controller_model: MagicMock,
+    mock_modbus_connection: MockModbusConnection,
+) -> None:
+    """Reconfiguring an experimental entry checks WPM G again and keeps it."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_HOST: "1.1.1.1",
+            CONF_PORT: 502,
+            CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await entry.start_reconfigure_flow(hass)
+    assert CONF_CONTROLLER_TYPE not in {
+        key.schema for key in result["data_schema"].schema
+    }
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], RECONFIGURE_INPUT
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert dict(entry.data) == {
+        **RECONFIGURE_INPUT,
+        CONF_CONTROLLER_TYPE: CONTROLLER_TYPE_WPM_G_EXPERIMENTAL,
+    }
+    mock_get_controller_model.assert_not_called()
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_unload(entry.entry_id)
